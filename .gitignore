@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+*.DS_Store
+.temp
+saham_scraper/.env
+downloads

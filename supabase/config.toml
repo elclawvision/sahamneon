@@ -1,0 +1,11 @@
+[functions.saham-scraper]
+enabled = true
+verify_jwt = false
+import_map = "./functions/saham-scraper/deno.json"
+entrypoint = "./functions/saham-scraper/index.ts"
+
+[functions.saham-conglomerate-scraper]
+enabled = true
+verify_jwt = false
+import_map = "./functions/saham-conglomerate-scraper/deno.json"
+entrypoint = "./functions/saham-conglomerate-scraper/index.ts"
