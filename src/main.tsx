@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-const APP_VERSION = '2026.03.10.01'; // <-- Change this to force cache clear
+const APP_VERSION = '2026.03.10.02'; // <-- Change this to force cache clear
 
 if (typeof window !== 'undefined' && localStorage.getItem('v_cache') !== APP_VERSION) {
     if ('serviceWorker' in navigator) {

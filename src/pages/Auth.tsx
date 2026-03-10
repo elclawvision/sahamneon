@@ -10,7 +10,17 @@ export default function Auth() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [currentView, setCurrentView] = useState<'auth' | 'forgot-password' | 'reset-sent'>('auth');
-    const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+    const [activeTab, setActiveTab] = useState<'login' | 'signup'>(() => {
+        if (typeof window !== 'undefined') {
+            return (localStorage.getItem('auth_active_tab') as 'login' | 'signup') || 'login';
+        }
+        return 'login';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('auth_active_tab', activeTab);
+    }, [activeTab]);
+
     const [errorMsg, setErrorMsg] = useState("");
 
     const [loginData, setLoginData] = useState({ email: '', password: '' });

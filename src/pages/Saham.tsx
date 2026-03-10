@@ -319,7 +319,17 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
 
 /* ─── DASHBOARD ─── */
 function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string | null, onLogout: () => void, onRequestLogin: () => void }) {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('saham_active_tab') || "overview";
+    }
+    return "overview";
+  });
+
+  useEffect(() => {
+    localStorage.setItem('saham_active_tab', activeTab);
+  }, [activeTab]);
+
   const [pulseTick, setPulseTick] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
