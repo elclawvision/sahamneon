@@ -399,7 +399,8 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
   };
 
   const userName = userEmail ? userEmail.split("@")[0] : "guest_user";
-  const isPremium = userEmail === "dragon@yahoo.com" || Boolean(userEmail);
+  const isAdmin = userEmail === "dragon@yahoo.com" || userEmail === "octavi05andri@gmail.com";
+  const isPremium = isAdmin || Boolean(userEmail);
 
   useEffect(() => {
     const t = setInterval(() => setPulseTick(x => x + 1), 2000);
@@ -675,7 +676,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
             {sidebarOpen && (
               <div style={{ animation: "slideIn 0.2s ease both", overflow: "hidden" }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: userEmail ? "#1e293b" : "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 110 }}>{userName}</div>
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>{userEmail ? "Premium Member" : "Guest Mode"}</div>
+                <div style={{ fontSize: 11, color: isAdmin ? "#ef4444" : "#94a3b8", fontWeight: isAdmin ? 700 : 400 }}>{isAdmin ? "ADMIN" : userEmail ? "Premium Member" : "Guest Mode"}</div>
               </div>
             )}
           </div>
