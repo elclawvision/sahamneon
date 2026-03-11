@@ -450,7 +450,7 @@ export default function LandingPage() {
                     {[
                         ['900+', 'Emiten IDX'],
                         ['18', 'Grup Konglomerat'],
-                        ['80+', 'Ticker Dianalisis'],
+                        ['900++', 'Ticker Dianalisis'],
                         ['REAL-TIME', 'KSEI Maret 2026'],
                         ['500+', 'Pembeli Terverifikasi'],
                     ].map(([num, label]) => (
@@ -557,7 +557,7 @@ export default function LandingPage() {
                             {[
                                 ['🐋 Platform Whale Radar IDX — Real-Time Maret', 'Rp 300.000'],
                                 ['📊 Free Float Screener + Warning Flag', 'Rp 150.000'],
-                                ['🏢 Peta Konglomerat 18 Grup + 80 Ticker', 'Rp 150.000'],
+                                ['🏢 Peta Konglomerat 18 Grup + 900 Ticker ++', 'Rp 150.000'],
                                 ['👤 Public Figures & Politisi Portfolio', 'Rp 100.000'],
                                 ['📥 CSV Export Semua Data', 'Rp 100.000'],
                                 ['🎁 BONUS: Cheat Sheet 5 Tanda Whale (47 hal)', 'Rp 149.000'],
