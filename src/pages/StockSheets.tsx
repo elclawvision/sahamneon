@@ -9,11 +9,11 @@ import { StockRow, InvestorRow } from '../types/stock';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 
+import { getFreeFloatColumns, getStockColumns, getInvestorColumns } from './StockSheetColumns';
+import { getLocalTickerData, getLocalInvestorData } from '../data/tickerUtils';
 import { allTickers } from '../data/allTickers';
-import { investorTab } from '../data/investorTab';
-import tickerDetailsRaw from '../data/tickerDetails.json';
 
-const tickerDetails = tickerDetailsRaw as Record<string, any>;
+// Type definitions remain local for now or can be moved to types
 
 type DrillItem = {
     type: 'ticker' | 'investor';
@@ -72,39 +72,7 @@ const StockSheets: React.FC = () => {
     };
 
     // Local Search Helpers
-    const getLocalTickerData = (ticker: string) => {
-        const details = tickerDetails[ticker.toUpperCase()];
-        if (!details) return null;
-        return details;
-    };
-
-    const getLocalInvestorData = (name: string) => {
-        const holdings: any[] = [];
-        let nationality = 'Unknown';
-
-        // Scan all tickers for this investor
-        Object.keys(tickerDetails).forEach(ticker => {
-            const data = tickerDetails[ticker];
-            const holder = data.holders?.find((h: any) => h.investor_name.toUpperCase() === name.toUpperCase());
-            if (holder) {
-                if (holder.nationality) nationality = holder.nationality;
-                holdings.push({
-                    share_code: ticker,
-                    total_holding_shares: holder.total_holding_shares,
-                    percentage: holder.percentage,
-                    date: holder.date || 'Maret 2026'
-                });
-            }
-        });
-
-        if (holdings.length === 0) return null;
-
-        return {
-            investor_name: name,
-            nationality: nationality,
-            holdings: holdings
-        };
-    };
+    // Local Search Helpers replaced by tickerUtils
 
 
     const pushToStack = (type: 'ticker' | 'investor', id: string) => {
@@ -200,218 +168,9 @@ const StockSheets: React.FC = () => {
         return [];
     }, [activeTab, tickerSubTab, floatFilter, celebSubTab, selectedConglo, selectedPublic, selectedHot, allStocks]);
 
-    const freeFloatColumns = [
-        { 
-            key: 'ticker' as keyof StockRow, 
-            label: 'TICKER',
-            minWidth: '100px',
-            render: (v: string) => (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        pushToStack('ticker', v);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#60a5fa',
-                        padding: 0,
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        textAlign: 'left',
-                        textDecoration: 'underline'
-                    }}
-                >
-                    {v}
-                </button>
-            )
-        },
-        { 
-            key: 'top_holder' as keyof StockRow, 
-            label: 'TOP HOLDER',
-            minWidth: '250px',
-            render: (v: string) => (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        pushToStack('investor', v);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-primary)',
-                        padding: 0,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        textDecoration: 'underline'
-                    }}
-                >
-                    {v}
-                </button>
-            )
-        },
-        { 
-            key: 'free_float' as keyof StockRow, 
-            label: 'FREE FLOAT', 
-            minWidth: '120px',
-            align: 'right' as const,
-            render: (v: number, row: StockRow) => (
-                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {v.toFixed(2)}% {row.has_warning && '⚠️'}
-                </span>
-            )
-        },
-        { 
-            key: 'free_float' as any, 
-            label: 'TOTAL HELD', 
-            minWidth: '120px',
-            align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{(100 - v).toFixed(2)}%</span>
-        },
-        { key: 'holders_count' as keyof StockRow, label: 'HOLDER', minWidth: '100px', align: 'right' as const },
-    ];
-
-    const stockColumns = [
-        { 
-            key: 'ticker' as keyof StockRow, 
-            label: 'TICKER',
-            minWidth: '100px',
-            render: (v: string) => (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        pushToStack('ticker', v);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#60a5fa',
-                        padding: 0,
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        textAlign: 'left',
-                        textDecoration: 'underline'
-                    }}
-                >
-                    {v}
-                </button>
-            )
-        },
-        { key: 'holders_count' as keyof StockRow, label: 'HOLDERS', minWidth: '100px', align: 'right' as const },
-        { 
-            key: 'top_holder' as keyof StockRow, 
-            label: 'TOP HOLDER',
-            minWidth: '250px',
-            render: (v: string) => (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        pushToStack('investor', v);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-primary)',
-                        padding: 0,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        textDecoration: 'underline'
-                    }}
-                >
-                    {v}
-                </button>
-            )
-        },
-        { key: 'top_pct' as keyof StockRow, label: 'TOP %', minWidth: '100px', align: 'right' as const, render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span> },
-        { 
-            key: 'local_pct' as keyof StockRow, 
-            label: 'LOCAL %', 
-            minWidth: '100px',
-            align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span>
-        },
-        { 
-            key: 'foreign_pct' as keyof StockRow, 
-            label: 'FOREIGN %', 
-            minWidth: '100px',
-            align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span>
-        },
-        { 
-            key: 'free_float' as keyof StockRow, 
-            label: floatFilter !== 'all' ? 'EST. FREE FLOAT ↑' : 'FREE FLOAT', 
-            minWidth: '120px',
-            align: 'right' as const,
-            render: (v: number, row: StockRow) => (
-                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {v.toFixed(2)}% {row.has_warning && '⚠️'}
-                </span>
-            )
-        },
-    ];
-
-    const investorColumns = [
-        { 
-            key: 'investor' as keyof InvestorRow, 
-            label: 'INVESTOR',
-            minWidth: '250px',
-            render: (v: string) => (
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        pushToStack('investor', v);
-                    }}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#60a5fa',
-                        padding: 0,
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        textAlign: 'left',
-                        textDecoration: 'underline'
-                    }}
-                >
-                    {v}
-                </button>
-            )
-        },
-        { key: 'type' as keyof InvestorRow, label: 'TYPE', minWidth: '80px', align: 'center' as const },
-        { key: 'nat' as keyof InvestorRow, label: 'NAT', minWidth: '80px', align: 'center' as const },
-        { key: 'positions' as keyof InvestorRow, label: 'POSITIONS', minWidth: '100px', align: 'right' as const },
-        { 
-            key: 'top_holding' as keyof InvestorRow, 
-            label: 'TOP HOLDING',
-            minWidth: '220px',
-            render: (v: string) => {
-                const ticker = v.split(' ')[0];
-                return (
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            pushToStack('ticker', ticker);
-                        }}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-primary)',
-                            padding: 0,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            textDecoration: 'underline',
-                            fontSize: '11px',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '180px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                        }}
-                    >
-                        {v}
-                    </button>
-                );
-            }
-        },
-    ];
+    const freeFloatColumns = getFreeFloatColumns(pushToStack);
+    const stockColumns = getStockColumns(pushToStack);
+    const investorColumns = getInvestorColumns(pushToStack);
 
     return (
         <div style={{
@@ -1210,3 +969,4 @@ const StockSheets: React.FC = () => {
 };
 
 export default StockSheets;
+// HMR Trigger Thu Mar 12 03:15:36 WIB 2026
