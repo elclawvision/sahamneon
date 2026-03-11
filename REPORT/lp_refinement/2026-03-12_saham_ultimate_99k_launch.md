@@ -17,7 +17,8 @@ The user initiated a "Flash Sale" for Saham Ultimate, dropping the price from Rp
 - **Real-Time Polling**: Added a `useEffect` in `Payment.tsx` that polls the `saham_clients` table every 5 seconds. If a record is found, it shows an "Instant Success" toast.
 - **Z-Index Fix**: Injected global CSS into `App.tsx` and configured `sonner` Toaster with `zIndex: 999999`.
 - **UI Cleanup**: Removed the extra navbar button and fixed a missed price reference (249k) in the final CTA.
-- **Cache Busting**: Incremented `APP_VERSION` to `2026.03.12.16` and ran `npm run build`.
+- **Heading Aesthetics**: Loosened `letter-spacing` and increased `line-height` for all headings (`h1` to `h3`) to resolve the cramped appearance.
+- **Cache Busting**: Incremented `APP_VERSION` to `2026.03.12.17` and ran `npm run build`.
 
 ### Backend (Elvisiongroup Repo)
 - **Callback Optimization**: Updated `tripay-callback` to:
