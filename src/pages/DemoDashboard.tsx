@@ -142,27 +142,71 @@ export default function DemoDashboard() {
                     </button>
                 </div>
 
-                {/* Desktop Tabs */}
+                {/* Desktop Tabs & Actions */}
                 {!isMobile && (
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', background: '#fff', padding: '6px', borderRadius: '12px', width: 'fit-content', border: '1px solid #e2e8f0' }}>
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                style={{
-                                    padding: '10px 24px',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: activeTab === tab.id ? '#3b82f6' : 'transparent',
-                                    color: activeTab === tab.id ? '#fff' : '#64748b',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                        <div style={{ display: 'flex', gap: '8px', background: '#fff', padding: '6px', borderRadius: '12px', width: 'fit-content', border: '1px solid #e2e8f0' }}>
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    style={{
+                                        padding: '10px 24px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: activeTab === tab.id ? '#3b82f6' : 'transparent',
+                                        color: activeTab === tab.id ? '#fff' : '#64748b',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => navigate('/auth')}
+                            style={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px', 
+                                background: '#f8fafc', 
+                                color: '#94a3b8', 
+                                border: '1px solid #e2e8f0', 
+                                borderRadius: '10px', 
+                                fontWeight: 700, 
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            📥 Download CSV <span style={{ fontSize: '10px', background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>LOCKED</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* Mobile Actions */}
+                {isMobile && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                        <button 
+                            onClick={() => navigate('/auth')}
+                            style={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 12px', 
+                                background: '#fff', 
+                                color: '#94a3b8', 
+                                border: '1px solid #e2e8f0', 
+                                borderRadius: '8px', 
+                                fontWeight: 800, 
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                            }}
+                        >
+                            📥 CSV <span style={{ fontSize: '10px' }}>🔒</span>
+                        </button>
                     </div>
                 )}
 
