@@ -471,44 +471,7 @@ const StockSheets: React.FC = () => {
                         >
                             {theme === 'light' ? '🌙' : '☀️'}
                         </button>
-                        
-                        {userEmail === 'dragon@yahoo.com' && (
-                            <button
-                                onClick={() => {
-                                    const now = new Date();
-                                    const formattedDate = now.toLocaleDateString('id-ID', { 
-                                        day: 'numeric', 
-                                        month: 'long', 
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    });
-                                    setLastUpdate(formattedDate);
-                                    localStorage.setItem('saham_last_update', formattedDate);
-                                    setUpdateSuccess(true);
-                                    setTimeout(() => setUpdateSuccess(false), 3000);
-                                    alert(`Update API Berhasil!\n\nBot akan mendownload PDF laporan terbaru dari KSEI/IDX dan mengupdate database.\n\nTimestamp Baru: ${formattedDate}`);
-                                }}
-                                style={{
-                                    background: updateSuccess ? '#059669' : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                                    border: 'none',
-                                    color: '#fff',
-                                    padding: isMobile ? '8px 12px' : '10px 20px',
-                                    borderRadius: '10px',
-                                    cursor: 'pointer',
-                                    fontWeight: 700,
-                                    fontSize: isMobile ? '12px' : '14px',
-                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    transform: updateSuccess ? 'scale(1.05)' : 'scale(1)'
-                                }}
-                            >
-                                <span>{updateSuccess ? '✅ Updated' : '🔄 UPDATE API'}</span>
-                            </button>
-                        )}
+
                         
                         {!isMobile && (
                             <div style={{ position: 'relative' }}>
