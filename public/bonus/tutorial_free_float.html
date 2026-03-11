@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial: Deteksi Saham Gorengan via Free Float - Saham Ultimate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; padding: 40px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 60px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .logo { font-size: 20px; fontWeight: 800; color: #0f172a; margin-bottom: 20px; }
+        .logo span { color: #3b82f6; }
+        h1 { font-size: 28px; line-height: 1.2; margin-bottom: 15px; color: #0f172a; }
+        .intro { color: #64748b; font-size: 16px; margin-bottom: 40px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 16px; margin-bottom: 24px; }
+        .card h3 { margin-top: 0; color: #3b82f6; }
+        .threshold { display: flex; gap: 10px; margin-top: 20px; }
+        .label { padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 700; }
+        .danger { background: #fee2e2; color: #ef4444; }
+        .safe { background: #dcfce7; color: #15803d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">SAHAM<span>ULTIMATE</span></div>
+        <p style="text-transform: uppercase; font-size: 12px; font-weight: 800; color: #3b82f6; letter-spacing: 1px; margin-bottom: 8px;">Tutorial Singkat</p>
+        <h1>Cara Deteksi "Gorengan" Pakai Data Free Float</h1>
+        <p class="intro">Banyak ritel terjebak di saham yang harganya naik tinggi tapi liquiditasnya nol. Kuasai parameter ini untuk tetap aman.</p>
+
+        <div class="card">
+            <h3>Apa itu Free Float?</h3>
+            <p>Jumlah saham yang beredar di masyarakat umum (ritel) dan tidak dipegang oleh pengendali. Semakin sedikit free float, semakin mudah harga dimanipulasi oleh 1-2 whale saja.</p>
+        </div>
+
+        <div class="card">
+            <h3>Standard Aman (Liquiditas)</h3>
+            <div class="threshold">
+                <span class="label safe">7.5% - 20%</span>
+                <p style="margin: 0; font-size: 14px;">Ideal. Cukup liquid untuk keluar-masuk, namun cukup ketat untuk akumulasi whale.</p>
+            </div>
+            <div class="threshold">
+                <span class="label danger">< 5%</span>
+                <p style="margin: 0; font-size: 14px;"><strong>Danger!</strong> Disebut "Saham Bobo". Jika volume transaksi naik tanpa ada kenaikan % Holders, waspada "Gorengan" sepi peminat.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Gunakan Fitur "Screener" di Saham Ultimate</h3>
+            <ol style="padding-left: 20px; font-size: 15px;">
+                <li>Aktifkan tab <strong>Free Float</strong>.</li>
+                <li>Filter berdasarkan range 0% - 15%.</li>
+                <li>Cari ticker yang punya <strong>WARNING ⚠️</strong>. Ini adalah sinyal bahwa free float sangat kecil.</li>
+                <li>Saham gorengan seringkali memiliki % Holders yang tetap (dimonopoli) namun harga naik liar (Pump & Dump).</li>
+            </ol>
+        </div>
+
+        <p style="text-align: center; font-size: 13px; color: #94a3b8; margin-top: 60px;">
+            Tutorial ini disiapkan oleh tim riset Saham Ultimate. Data H+1 adalah kunci anti-FOMO.
+        </p>
+    </div>
+</body>
+</html>
