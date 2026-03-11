@@ -10,7 +10,7 @@ Saham Ultimate is designed to bridge the gap between complex KSEI data and actio
 ## 🚀 Key Features (The "Power" Stack)
 
 ### 1. 📈 Multi-Dimensional Ticker Analysis
-- **H+1 KSEI Reporting**: Real-time data sync with daily updates.
+- **Real-Time KSEI Reporting**: Live data sync as of March 2026.
 - **Top Holder Transparency**: Instantly see who owns the most of any stock.
 - **Local vs Foreign Mix**: Beautifully calculated percentages to see who is driving the price.
 
