@@ -33,11 +33,11 @@ function App() {
                 {/* Auth Page */}
                 <Route path="/auth" element={<Auth />} />
 
-                {/* Main Entry: Redirect to sheets if logged in, else auth (or LP if you prefer) */}
-                <Route path="/" element={session ? <Navigate to="/sheets" replace /> : <Navigate to="/auth" replace />} />
+                {/* Main Entry: Redirect to sheets if logged in, else LP */}
+                <Route path="/" element={session ? <Navigate to="/sheets" replace /> : <Navigate to="/lp" replace />} />
 
                 {/* Protected Sheets */}
-                <Route path="/sheets" element={session ? <StockSheets /> : <Navigate to="/auth" replace />} />
+                <Route path="/sheets" element={session ? <StockSheets /> : <Navigate to="/lp" replace />} />
 
                 {/* Legacy cleanup redirect */}
                 <Route path="/saham" element={<Navigate to="/sheets" replace />} />

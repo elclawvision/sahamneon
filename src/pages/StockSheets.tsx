@@ -474,22 +474,70 @@ const StockSheets: React.FC = () => {
                         )}
                         
                         {!isMobile && (
-                            <button
-                                onClick={() => navigate('/saham')}
-                                style={{
-                                    background: 'var(--accent)',
-                                    border: 'none',
-                                    color: '#fff',
-                                    padding: '10px 20px',
-                                    borderRadius: '10px',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                }}
-                            >
-                                Dashboard
-                            </button>
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                    style={{
+                                        background: 'var(--accent)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '10px 20px',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}
+                                >
+                                    <span>Profile</span>
+                                    <span style={{ fontSize: '10px' }}>{showProfileMenu ? '▲' : '▼'}</span>
+                                </button>
+                                
+                                {showProfileMenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '8px',
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                                        padding: '12px',
+                                        minWidth: '200px',
+                                        zIndex: 1000,
+                                        animation: 'fadeUp 0.2s ease'
+                                    }}>
+                                        <div style={{ padding: '8px', borderBottom: '1px solid var(--border)', marginBottom: '8px' }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.5px' }}>LOGGED IN AS</div>
+                                            <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, marginTop: '2px', wordBreak: 'break-all' }}>{userEmail}</div>
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
+                                            style={{
+                                                width: '100%',
+                                                textAlign: 'left',
+                                                padding: '10px 12px',
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#ef4444',
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                borderRadius: '8px',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
