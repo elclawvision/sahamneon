@@ -20,6 +20,13 @@ const StockTable = <T extends Record<string, any>>({
     initialSort 
 }: StockTableProps<T>) => {
     const [sortConfig, setSortConfig] = useState<{ key: keyof T, direction: 'asc' | 'desc' } | null>(initialSort || null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 50;
+
+    // Reset pagination when data changes
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [data.length]);
 
     const sortedData = useMemo(() => {
         let sortableItems = [...data];
@@ -44,6 +51,13 @@ const StockTable = <T extends Record<string, any>>({
         return sortableItems;
     }, [data, sortConfig]);
 
+    const paginatedData = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return sortedData.slice(start, start + pageSize);
+    }, [sortedData, currentPage]);
+
+    const totalPages = Math.ceil(sortedData.length / pageSize);
+
     const requestSort = (key: keyof T) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -53,54 +67,106 @@ const StockTable = <T extends Record<string, any>>({
     };
 
     return (
-        <div style={{ overflowX: 'auto', width: '100%' }}>
-            <table style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse', 
-                textAlign: 'left',
-                fontSize: '14px',
-                color: 'var(--text-primary)'
-            }}>
-                <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                        {columns.map((col) => (
-                            <th 
-                                key={col.key as string}
-                                onClick={() => requestSort(col.key)}
-                                style={{ 
-                                    padding: '16px', 
-                                    color: 'var(--text-secondary)', 
-                                    fontWeight: 600, 
-                                    cursor: 'pointer',
-                                    userSelect: 'none',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {col.label} {sortConfig?.key === col.key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedData.map((row) => (
-                        <tr 
-                            key={rowKey(row)} 
-                            style={{ 
-                                borderBottom: '1px solid var(--border)',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
-                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
+        <div style={{ width: '100%' }}>
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table style={{ 
+                    width: '100%', 
+                    borderCollapse: 'collapse', 
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: 'var(--text-primary)'
+                }}>
+                    <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
                             {columns.map((col) => (
-                                <td key={col.key as string} style={{ padding: '16px' }}>
-                                    {col.render ? col.render(row[col.key], row) : row[col.key]}
-                                </td>
+                                <th 
+                                    key={col.key as string}
+                                    onClick={() => requestSort(col.key)}
+                                    style={{ 
+                                        padding: '16px', 
+                                        color: 'var(--text-secondary)', 
+                                        fontWeight: 600, 
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {col.label} {sortConfig?.key === col.key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                                </th>
                             ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {paginatedData.map((row) => (
+                            <tr 
+                                key={rowKey(row)} 
+                                style={{ 
+                                    borderBottom: '1px solid var(--border)',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                                {columns.map((col) => (
+                                    <td key={col.key as string} style={{ padding: '16px' }}>
+                                        {col.render ? col.render(row[col.key], row) : row[col.key]}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {totalPages > 1 && (
+                <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    padding: '24px 16px',
+                    borderTop: '1px solid var(--border)',
+                    marginTop: '8px'
+                }}>
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={{
+                            padding: '8px 16px',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            color: currentPage === 1 ? 'var(--text-secondary)' : 'var(--text-primary)',
+                            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600
+                        }}
+                    >
+                        Previous
+                    </button>
+                    
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                        Page <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{currentPage}</span> of {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        style={{
+                            padding: '8px 16px',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            color: currentPage === totalPages ? 'var(--text-secondary)' : 'var(--text-primary)',
+                            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                            fontSize: '13px',
+                            fontWeight: 600
+                        }}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
