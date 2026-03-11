@@ -710,7 +710,6 @@ const StockSheets: React.FC = () => {
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>HOLDER NAME</th>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>SHARES</th>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>PERCENTAGE</th>
-                                                        <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>DATE REPORTED</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -725,8 +724,7 @@ const StockSheets: React.FC = () => {
                                                                 </button>
                                                             </td>
                                                             <td style={{ padding: '12px' }}>{h.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa' }}>{h.percentage.toFixed(2)}%</td>
-                                                            <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{h.date}</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '11px' }}>{h.percentage.toFixed(2)}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -756,7 +754,6 @@ const StockSheets: React.FC = () => {
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>TICKER</th>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>SHARES</th>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>OWNERSHIP %</th>
-                                                        <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>LAST UPDATE</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -771,8 +768,7 @@ const StockSheets: React.FC = () => {
                                                                 </button>
                                                             </td>
                                                             <td style={{ padding: '12px' }}>{p.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa' }}>{p.percentage.toFixed(2)}%</td>
-                                                            <td style={{ padding: '12px', color: '#94a3b8' }}>{p.date}</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '11px' }}>{p.percentage.toFixed(2)}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
