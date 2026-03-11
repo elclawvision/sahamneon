@@ -114,9 +114,34 @@ export default function DemoDashboard() {
 
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Header */}
-                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>
-                        SAHAM<span style={{ color: '#3b82f6' }}>ULTIMATE</span> <span style={{ fontSize: '12px', background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '8px' }}>DEMO</span>
+                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {isMobile && (
+                            <button 
+                                onClick={() => navigate('/lp')}
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    width: '44px', 
+                                    height: '44px', 
+                                    background: '#fff', 
+                                    border: '1px solid #e2e8f0', 
+                                    borderRadius: '12px', 
+                                    color: '#0f172a',
+                                    fontSize: '20px',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                                    flexShrink: 0
+                                }}
+                            >
+                                ←
+                            </button>
+                        )}
+                        <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 800, color: '#0f172a' }}>
+                            SAHAM<span style={{ color: '#3b82f6' }}>ULTIMATE</span> <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '4px' }}>DEMO</span>
+                        </div>
                     </div>
                     {!isMobile && (
                         <button 

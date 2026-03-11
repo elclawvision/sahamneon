@@ -91,6 +91,32 @@ export default function Auth() {
                 {dots.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={0.9} fill="#3b82f6" fillOpacity={d.op} />)}
             </svg>
 
+            {/* Back Button for Mobile */}
+            <button 
+                onClick={() => navigate('/lp')}
+                style={{
+                    position: "absolute",
+                    top: "20px",
+                    left: "20px",
+                    zIndex: 10,
+                    width: "50px",
+                    height: "50px",
+                    borderRadius: "15px",
+                    background: "#fff",
+                    border: "1px solid rgba(0,0,0,0.08)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "24px",
+                    color: "#0f172a",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
+                }}
+            >
+                ←
+            </button>
+
             {/* Left side decorative */}
             <div className="bg-decoration" style={{
                 position: "absolute", left: -120, top: "50%", transform: "translateY(-50%)",
