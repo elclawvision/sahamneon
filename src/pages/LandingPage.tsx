@@ -426,7 +426,7 @@ export default function LandingPage() {
                 backdropFilter: 'blur(20px)',
                 zIndex: 100,
             }}>
-                <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.2px', color: '#0f172a' }}>
+                <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0', color: '#0f172a' }}>
                     SAHAM<span className="gradient-text">ULTIMATE</span>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -478,10 +478,10 @@ export default function LandingPage() {
                     <h1 style={{
                         fontSize: 'clamp(38px, 7.5vw, 80px)',
                         fontWeight: 800,
-                        lineHeight: 1.15,
-                        letterSpacing: '-0.8px',
+                        lineHeight: 1.3,
+                        letterSpacing: '-0.5px',
                         color: '#0f172a',
-                        maxWidth: '900px',
+                        maxWidth: '960px',
                         marginBottom: '24px',
                     }}>
                         Retail Kalah Bukan Karena Bodoh.<br />
@@ -536,7 +536,7 @@ export default function LandingPage() {
                         ['500+', 'Pembeli Terverifikasi'],
                     ].map(([num, label]) => (
                         <div key={label} style={{ background: '#fff', padding: '28px 20px', textAlign: 'center' }}>
-                            <div style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: '#0f172a', marginBottom: '4px', letterSpacing: '-0.4px' }}>{num}</div>
+                            <div style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: '#0f172a', marginBottom: '4px', letterSpacing: '0', lineHeight: 1.2 }}>{num}</div>
                             <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{label}</div>
                         </div>
                     ))}
@@ -547,7 +547,7 @@ export default function LandingPage() {
             <section style={{ padding: '0 6% 80px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '48px' }}>
                     <div className="section-eyebrow">Platform</div>
-                    <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
+                    <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', lineHeight: 1.35 }}>
                         Semua Data Whale,<br /><span className="gradient-text">Dalam Satu Tempat</span>
                     </h2>
                 </div>
@@ -574,7 +574,7 @@ export default function LandingPage() {
             <section style={{ padding: '0 6% 80px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '48px' }}>
                     <div className="section-eyebrow">Cara Pakai</div>
-                    <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
+                    <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', lineHeight: 1.35 }}>
                         3 Langkah, Langsung Dapat<br /><span className="gradient-text">Insight yang Kamu Butuhkan</span>
                     </h2>
                 </div>
@@ -601,7 +601,7 @@ export default function LandingPage() {
                         },
                     ].map(({ step, title, desc, tip }) => (
                         <div key={step} className="glass-card" style={{ padding: '32px', background: '#fff', borderColor: '#e2e8f0' }}>
-                            <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: 'rgba(15,23,42,0.15)', lineHeight: 1, marginBottom: '16px', letterSpacing: '-0.5px' }}>{step}</div>
+                            <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: 'rgba(15,23,42,0.15)', lineHeight: 1.2, marginBottom: '16px', letterSpacing: '0' }}>{step}</div>
                             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>{title}</h3>
                             <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.75, marginBottom: '14px' }}>{desc}</p>
                             <div style={{ padding: '10px 14px', background: 'rgba(59,130,246,0.05)', borderRadius: '10px', borderLeft: '3px solid var(--blue)' }}>
@@ -625,7 +625,7 @@ export default function LandingPage() {
                     }}>
                         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
                             <div className="section-eyebrow">Absurd Offer</div>
-                            <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: '12px', lineHeight: 1.2 }}>
+                            <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', marginBottom: '12px', lineHeight: 1.3 }}>
                                 Informasi yang Biasanya<br /><span className="gradient-text">Cuma Dimiliki Fund Manager</span>
                             </h2>
                             <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', maxWidth: '520px', margin: '0 auto' }}>
@@ -700,7 +700,7 @@ export default function LandingPage() {
                 <div className={`fade-up ${bonusSection.inView ? 'visible' : ''}`}>
                         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                         <div className="section-eyebrow">Bonus Eksklusif</div>
-                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: '12px', lineHeight: 1.2 }}>
+                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', marginBottom: '12px', lineHeight: 1.35 }}>
                             3 PDF Bonus — <span className="gold-text">Total 117 Halaman</span>
                         </h2>
                         <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '14px' }}>
@@ -773,7 +773,7 @@ export default function LandingPage() {
                     }}>
                         <div style={{ marginBottom: '32px' }}>
                             <div className="section-eyebrow">Transparansi</div>
-                            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.4px', marginBottom: '12px' }}>
+                            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: '#0f172a', letterSpacing: '0', marginBottom: '12px', lineHeight: 1.3 }}>
                                 Kami Berintegritas
                             </h2>
                             <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '14px', maxWidth: '540px', lineHeight: 1.7 }}>
@@ -807,7 +807,7 @@ export default function LandingPage() {
                 <div className={`fade-up ${reviewSection.inView ? 'visible' : ''}`}>
                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                         <div className="section-eyebrow">Review Terverifikasi</div>
-                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '0', marginBottom: '8px', lineHeight: 1.3 }}>
                             Apa Kata 500+ Pembeli
                         </h2>
                         <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '13px' }}>
@@ -911,7 +911,7 @@ export default function LandingPage() {
                 <div className={`fade-up ${faqSection.inView ? 'visible' : ''}`} style={{ maxWidth: '700px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                         <div className="section-eyebrow">FAQ</div>
-                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
+                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', lineHeight: 1.35 }}>
                             Pertanyaan<br /><span className="gradient-text">yang Sering Ditanya</span>
                         </h2>
                     </div>
@@ -934,7 +934,7 @@ export default function LandingPage() {
             <section style={{ padding: '0 6% 100px', textAlign: 'center' }}>
                 <div style={{ maxWidth: '640px', margin: '0 auto' }}>
                     <div className="section-eyebrow" style={{ textAlign: 'center' }}>Mulai Sekarang</div>
-                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#000', letterSpacing: '-0.8px', lineHeight: 1.2, marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: '20px' }}>
                         Stop Tebak-tebakan.<br /><span className="gradient-text">Baca Jejaknya.</span>
                     </h2>
                     <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', marginBottom: '36px', lineHeight: 1.7 }}>
