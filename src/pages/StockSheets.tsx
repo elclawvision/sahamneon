@@ -202,6 +202,7 @@ const StockSheets: React.FC = () => {
         { 
             key: 'ticker' as keyof StockRow, 
             label: 'TICKER',
+            minWidth: '100px',
             render: (v: string) => (
                 <button 
                     onClick={(e) => {
@@ -226,6 +227,7 @@ const StockSheets: React.FC = () => {
         { 
             key: 'top_holder' as keyof StockRow, 
             label: 'TOP HOLDER',
+            minWidth: '250px',
             render: (v: string) => (
                 <button 
                     onClick={(e) => {
@@ -249,6 +251,8 @@ const StockSheets: React.FC = () => {
         { 
             key: 'free_float' as keyof StockRow, 
             label: 'FREE FLOAT', 
+            minWidth: '120px',
+            align: 'right' as const,
             render: (v: number, row: StockRow) => (
                 <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '11px' }}>
                     {v.toFixed(2)}% {row.has_warning && '⚠️'}
@@ -258,15 +262,18 @@ const StockSheets: React.FC = () => {
         { 
             key: 'free_float' as any, 
             label: 'TOTAL HELD', 
+            minWidth: '120px',
+            align: 'right' as const,
             render: (v: number) => <span style={{ fontSize: '11px' }}>{(100 - v).toFixed(2)}%</span>
         },
-        { key: 'holders_count' as keyof StockRow, label: 'HOLDER' },
+        { key: 'holders_count' as keyof StockRow, label: 'HOLDER', minWidth: '100px', align: 'right' as const },
     ];
 
     const stockColumns = [
         { 
             key: 'ticker' as keyof StockRow, 
             label: 'TICKER',
+            minWidth: '100px',
             render: (v: string) => (
                 <button 
                     onClick={(e) => {
@@ -288,10 +295,11 @@ const StockSheets: React.FC = () => {
                 </button>
             )
         },
-        { key: 'holders_count' as keyof StockRow, label: 'HOLDERS' },
+        { key: 'holders_count' as keyof StockRow, label: 'HOLDERS', minWidth: '100px', align: 'right' as const },
         { 
             key: 'top_holder' as keyof StockRow, 
             label: 'TOP HOLDER',
+            minWidth: '250px',
             render: (v: string) => (
                 <button 
                     onClick={(e) => {
@@ -312,20 +320,26 @@ const StockSheets: React.FC = () => {
                 </button>
             )
         },
-        { key: 'top_pct' as keyof StockRow, label: 'TOP %', render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span> },
+        { key: 'top_pct' as keyof StockRow, label: 'TOP %', minWidth: '100px', align: 'right' as const, render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span> },
         { 
             key: 'local_pct' as keyof StockRow, 
             label: 'LOCAL %', 
+            minWidth: '100px',
+            align: 'right' as const,
             render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span>
         },
         { 
             key: 'foreign_pct' as keyof StockRow, 
             label: 'FOREIGN %', 
+            minWidth: '100px',
+            align: 'right' as const,
             render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span>
         },
         { 
             key: 'free_float' as keyof StockRow, 
             label: floatFilter !== 'all' ? 'EST. FREE FLOAT ↑' : 'FREE FLOAT', 
+            minWidth: '120px',
+            align: 'right' as const,
             render: (v: number, row: StockRow) => (
                 <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '11px' }}>
                     {v.toFixed(2)}% {row.has_warning && '⚠️'}
@@ -338,6 +352,7 @@ const StockSheets: React.FC = () => {
         { 
             key: 'investor' as keyof InvestorRow, 
             label: 'INVESTOR',
+            minWidth: '250px',
             render: (v: string) => (
                 <button 
                     onClick={(e) => {
@@ -359,12 +374,13 @@ const StockSheets: React.FC = () => {
                 </button>
             )
         },
-        { key: 'type' as keyof InvestorRow, label: 'TYPE' },
-        { key: 'nat' as keyof InvestorRow, label: 'NAT' },
-        { key: 'positions' as keyof InvestorRow, label: 'POSITIONS' },
+        { key: 'type' as keyof InvestorRow, label: 'TYPE', minWidth: '80px', align: 'center' as const },
+        { key: 'nat' as keyof InvestorRow, label: 'NAT', minWidth: '80px', align: 'center' as const },
+        { key: 'positions' as keyof InvestorRow, label: 'POSITIONS', minWidth: '100px', align: 'right' as const },
         { 
             key: 'top_holding' as keyof InvestorRow, 
             label: 'TOP HOLDING',
+            minWidth: '200px',
             render: (v: string) => {
                 const ticker = v.split(' ')[0];
                 return (
@@ -991,6 +1007,7 @@ const StockSheets: React.FC = () => {
 
                             {activeTab === 'investor' ? (
                                 <StockTable<InvestorRow>
+                                    key={`investor-${activeTab}`}
                                     data={activeData as any as InvestorRow[]}
                                     columns={investorColumns}
                                     rowKey={(row) => row.investor}
@@ -1039,6 +1056,7 @@ const StockSheets: React.FC = () => {
                                 </div>
                             ) : (
                                 <StockTable<StockRow>
+                                    key={`ticker-${activeTab}-${tickerSubTab}`}
                                     data={activeData as any as StockRow[]}
                                     columns={activeTab === 'tickers' && tickerSubTab === 'free' ? freeFloatColumns : stockColumns}
                                     rowKey={(row) => row.ticker}

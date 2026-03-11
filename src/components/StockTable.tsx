@@ -4,6 +4,8 @@ interface Column<T> {
     key: keyof T;
     label: string;
     render?: (value: any, row: T) => React.ReactNode;
+    minWidth?: string;
+    align?: 'left' | 'center' | 'right';
 }
 
 interface StockTableProps<T> {
@@ -88,7 +90,9 @@ const StockTable = <T extends Record<string, any>>({
                                         fontWeight: 600, 
                                         cursor: 'pointer',
                                         userSelect: 'none',
-                                        whiteSpace: 'nowrap'
+                                        whiteSpace: 'nowrap',
+                                        minWidth: col.minWidth,
+                                        textAlign: col.align || 'left'
                                     }}
                                 >
                                     {col.label} {sortConfig?.key === col.key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -108,7 +112,14 @@ const StockTable = <T extends Record<string, any>>({
                                 onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                                 {columns.map((col) => (
-                                    <td key={col.key as string} style={{ padding: '16px' }}>
+                                    <td 
+                                        key={col.key as string} 
+                                        style={{ 
+                                            padding: '16px',
+                                            minWidth: col.minWidth,
+                                            textAlign: col.align || 'left'
+                                        }}
+                                    >
                                         {col.render ? col.render(row[col.key], row) : row[col.key]}
                                     </td>
                                 ))}
