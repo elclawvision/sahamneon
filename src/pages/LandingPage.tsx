@@ -9,21 +9,20 @@ interface ReviewItem {
     date: string;
     text: string;
     verified: boolean;
-    badge?: string;
 }
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const REVIEWS: ReviewItem[] = [
-    { id: 1, email: 'bud***@gmail.com', rating: 5, date: '2 Mar 2026', text: 'Gila sih ini. Baru 2 hari pakai udah nemu saham yang Lo Kheng Hong baru masuk, holders count turun 8% dalam sebulan. Entry di 340, sekarang udah 410. Worth it banget buat 99rb.', verified: true, badge: 'Value Investor' },
-    { id: 2, email: 'ren***@yahoo.com', rating: 5, date: '28 Feb 2026', text: 'Data foreign flow-nya akurat banget. Saya compare sama aplikasi lain yang saya bayar 500rb/bulan — Saham Ultimate Real-Time KSEI jauh lebih clean dan mudah dibaca. Langsung pindah ke sini.', verified: true, badge: 'Pro Trader' },
-    { id: 3, email: 'senaditsr***@hotmail.com', rating: 5, date: '25 Feb 2026', text: 'CSV export-nya the real MVP. Langsung saya masukkan ke Google Sheets dan bikin dashboard sendiri. Bonus tutorialnya juga sangat membantu untuk pemula seperti saya.', verified: true, badge: 'Data Analyst' },
-    { id: 4, email: 'andhy***@gmail.com', rating: 5, date: '22 Feb 2026', text: 'Tab Public Figures itu yang paling keren menurut saya. Bisa lihat portfolio politisi aktif dan mantan pejabat. Informasi ini yang biasanya cuma dimiliki orang dalam.', verified: true, badge: 'Swing Trader' },
-    { id: 5, email: 'dew***@gmail.com', rating: 4, date: '19 Feb 2026', text: 'Sudah 3 bulan pakai dan puas banget. Hot searches feature sering akurat — beberapa nama yang trending di sini ternyata memang ada corporate action sebulan kemudian. Rekomended!', verified: true, badge: 'Investor Ritel' },
-    { id: 6, email: 'eko***@outlook.com', rating: 5, date: '15 Feb 2026', text: 'Bonus ebook cheat sheet whale-nya beneran 47 halaman penuh! Bukan PDF tipis ala-ala. Saya print dan tempel di meja trading. Best purchase di 2026 sejauh ini.', verified: true, badge: 'Full-time Trader' },
-    { id: 7, email: 'fir***@gmail.com', rating: 5, date: '12 Feb 2026', text: 'Konglomerat map-nya super berguna. Begitu ada berita positif di satu perusahaan Prajogo, saya langsung cek semua saham grupnya. Return rata-rata 3 bulan terakhir naik signifikan.', verified: true, badge: 'Group Investor' },
-    { id: 8, email: 'han***@gmail.com', rating: 5, date: '8 Feb 2026', text: 'Sebagai pemula yang baru 6 bulan investasi, tutorial free float-nya literally ngubah cara pandang saya. Sekarang saya tidak pernah beli saham tanpa cek free float dulu.', verified: true, badge: 'Pemula' },
-    { id: 9, email: 'irw***@yahoo.co.id', rating: 4, date: '5 Feb 2026', text: 'Mobile version-nya bagus, cepat, tidak berat. Saya sering cek pas lagi di jalan atau meeting. Data peta konglomerat 2025-nya juga up-to-date, beda sama yang beredar gratis di internet.', verified: true, badge: 'Mobile User' },
-    { id: 10, email: 'jul***@gmail.com', rating: 5, date: '1 Feb 2026', text: 'Norges Bank portofolio list-nya bikin nganga. Ternyata banyak saham mid-cap yang mereka pegang diam-diam. Sekarang jadi salah satu filter utama saya sebelum riset lebih dalam.', verified: true, badge: 'Fundamental Investor' },
+    { id: 1, email: 'bud***@gmail.com', rating: 5, date: '2 Mar 2026', text: 'Gila sih ini. Baru 2 hari pakai udah nemu saham yang Lo Kheng Hong baru masuk, holders count turun 8% dalam sebulan. Entry di 340, sekarang udah 410. Worth it banget buat 99rb.', verified: true },
+    { id: 2, email: 'ren***@yahoo.com', rating: 5, date: '28 Feb 2026', text: 'Data foreign flow-nya akurat banget. Saya compare sama aplikasi lain yang saya bayar 500rb/bulan — Saham Ultimate Real-Time KSEI jauh lebih clean dan mudah dibaca. Langsung pindah ke sini.', verified: true },
+    { id: 3, email: 'senaditsr***@hotmail.com', rating: 5, date: '25 Feb 2026', text: 'CSV export-nya the real MVP. Langsung saya masukkan ke Google Sheets dan bikin dashboard sendiri. Bonus tutorialnya juga sangat membantu untuk pemula seperti saya.', verified: true },
+    { id: 4, email: 'andhy***@gmail.com', rating: 5, date: '22 Feb 2026', text: 'Tab Public Figures itu yang paling keren menurut saya. Bisa lihat portfolio politisi aktif dan mantan pejabat. Informasi ini yang biasanya cuma dimiliki orang dalam.', verified: true },
+    { id: 5, email: 'dew***@gmail.com', rating: 4, date: '19 Feb 2026', text: 'Sudah 3 bulan pakai dan puas banget. Hot searches feature sering akurat — beberapa nama yang trending di sini ternyata memang ada corporate action sebulan kemudian. Rekomended!', verified: true },
+    { id: 6, email: 'eko***@outlook.com', rating: 5, date: '15 Feb 2026', text: 'Bonus ebook cheat sheet whale-nya beneran 47 halaman penuh! Bukan PDF tipis ala-ala. Saya print dan tempel di meja trading. Best purchase di 2026 sejauh ini.', verified: true },
+    { id: 7, email: 'fir***@gmail.com', rating: 5, date: '12 Feb 2026', text: 'Konglomerat map-nya super berguna. Begitu ada berita positif di satu perusahaan Prajogo, saya langsung cek semua saham grupnya. Return rata-rata 3 bulan terakhir naik signifikan.', verified: true },
+    { id: 8, email: 'han***@gmail.com', rating: 5, date: '8 Feb 2026', text: 'Sebagai pemula yang baru 6 bulan investasi, tutorial free float-nya literally ngubah cara pandang saya. Sekarang saya tidak pernah beli saham tanpa cek free float dulu.', verified: true },
+    { id: 9, email: 'irw***@yahoo.co.id', rating: 4, date: '5 Feb 2026', text: 'Mobile version-nya bagus, cepat, tidak berat. Saya sering cek pas lagi di jalan atau meeting. Data peta konglomerat 2025-nya juga up-to-date, beda sama yang beredar gratis di internet.', verified: true },
+    { id: 10, email: 'jul***@gmail.com', rating: 5, date: '1 Feb 2026', text: 'Norges Bank portofolio list-nya bikin nganga. Ternyata banyak saham mid-cap yang mereka pegang diam-diam. Sekarang jadi salah satu filter utama saya sebelum riset lebih dalam.', verified: true },
 ];
 
 const FAQS = [
@@ -759,9 +758,6 @@ export default function LandingPage() {
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                             <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>{r.email}</span>
-                                            {r.badge && (
-                                                <span className="badge-pill" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3b82f6', fontSize: '10px' }}>{r.badge}</span>
-                                            )}
                                             {r.verified && (
                                                 <span className="badge-pill" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: '#16a34a', fontSize: '10px' }}>
                                                     ✓ Verified Buyer
