@@ -520,7 +520,7 @@ export default function LandingPage() {
                         },
                     ].map(({ step, title, desc, tip }) => (
                         <div key={step} className="glass-card" style={{ padding: '32px', background: '#fff', borderColor: '#e2e8f0' }}>
-                            <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: 'rgba(59,130,246,0.1)', lineHeight: 1, marginBottom: '16px', letterSpacing: '-2px' }}>{step}</div>
+                            <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: 'rgba(15,23,42,0.15)', lineHeight: 1, marginBottom: '16px', letterSpacing: '-2px' }}>{step}</div>
                             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>{title}</h3>
                             <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.75, marginBottom: '14px' }}>{desc}</p>
                             <div style={{ padding: '10px 14px', background: 'rgba(59,130,246,0.05)', borderRadius: '10px', borderLeft: '3px solid var(--blue)' }}>
@@ -847,7 +847,7 @@ export default function LandingPage() {
             <section style={{ padding: '0 6% 100px', textAlign: 'center' }}>
                 <div style={{ maxWidth: '640px', margin: '0 auto' }}>
                     <div className="section-eyebrow" style={{ textAlign: 'center' }}>Mulai Sekarang</div>
-                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#000', letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: '20px' }}>
                         Stop Tebak-tebakan.<br /><span className="gradient-text">Baca Jejaknya.</span>
                     </h2>
                     <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', marginBottom: '36px', lineHeight: 1.7 }}>
