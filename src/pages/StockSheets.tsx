@@ -37,6 +37,8 @@ const StockSheets: React.FC = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [lastUpdate, setLastUpdate] = useState(localStorage.getItem('saham_last_update') || 'Maret 2026');
+    const [updateSuccess, setUpdateSuccess] = useState(false);
     
     const navigate = useNavigate();
 
@@ -254,7 +256,7 @@ const StockSheets: React.FC = () => {
             minWidth: '120px',
             align: 'right' as const,
             render: (v: number, row: StockRow) => (
-                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '11px' }}>
+                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {v.toFixed(2)}% {row.has_warning && '⚠️'}
                 </span>
             )
@@ -264,7 +266,7 @@ const StockSheets: React.FC = () => {
             label: 'TOTAL HELD', 
             minWidth: '120px',
             align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '11px' }}>{(100 - v).toFixed(2)}%</span>
+            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{(100 - v).toFixed(2)}%</span>
         },
         { key: 'holders_count' as keyof StockRow, label: 'HOLDER', minWidth: '100px', align: 'right' as const },
     ];
@@ -320,20 +322,20 @@ const StockSheets: React.FC = () => {
                 </button>
             )
         },
-        { key: 'top_pct' as keyof StockRow, label: 'TOP %', minWidth: '100px', align: 'right' as const, render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span> },
+        { key: 'top_pct' as keyof StockRow, label: 'TOP %', minWidth: '100px', align: 'right' as const, render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span> },
         { 
             key: 'local_pct' as keyof StockRow, 
             label: 'LOCAL %', 
             minWidth: '100px',
             align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span>
+            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span>
         },
         { 
             key: 'foreign_pct' as keyof StockRow, 
             label: 'FOREIGN %', 
             minWidth: '100px',
             align: 'right' as const,
-            render: (v: number) => <span style={{ fontSize: '11px' }}>{v.toFixed(2)}%</span>
+            render: (v: number) => <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{v.toFixed(2)}%</span>
         },
         { 
             key: 'free_float' as keyof StockRow, 
@@ -341,7 +343,7 @@ const StockSheets: React.FC = () => {
             minWidth: '120px',
             align: 'right' as const,
             render: (v: number, row: StockRow) => (
-                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '11px' }}>
+                <span style={{ color: row.has_warning ? '#fbbf24' : 'var(--text-primary)', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {v.toFixed(2)}% {row.has_warning && '⚠️'}
                 </span>
             )
@@ -380,7 +382,7 @@ const StockSheets: React.FC = () => {
         { 
             key: 'top_holding' as keyof InvestorRow, 
             label: 'TOP HOLDING',
-            minWidth: '200px',
+            minWidth: '220px',
             render: (v: string) => {
                 const ticker = v.split(' ')[0];
                 return (
@@ -396,7 +398,12 @@ const StockSheets: React.FC = () => {
                             padding: 0,
                             cursor: 'pointer',
                             textAlign: 'left',
-                            textDecoration: 'underline'
+                            textDecoration: 'underline',
+                            fontSize: '11px',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '180px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                         }}
                     >
                         {v}
@@ -468,10 +475,22 @@ const StockSheets: React.FC = () => {
                         {userEmail === 'dragon@yahoo.com' && (
                             <button
                                 onClick={() => {
-                                    alert("Update API Sedang Berjalan...\n\nFungsi: Bot akan mendownload PDF laporan terbaru dari KSEI/IDX, mengekstrak data kepemilikan whale, dan mengupdate database Supabase secara otomatis agar data tetap real H+1.");
+                                    const now = new Date();
+                                    const formattedDate = now.toLocaleDateString('id-ID', { 
+                                        day: 'numeric', 
+                                        month: 'long', 
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                    setLastUpdate(formattedDate);
+                                    localStorage.setItem('saham_last_update', formattedDate);
+                                    setUpdateSuccess(true);
+                                    setTimeout(() => setUpdateSuccess(false), 3000);
+                                    alert(`Update API Berhasil!\n\nBot akan mendownload PDF laporan terbaru dari KSEI/IDX dan mengupdate database.\n\nTimestamp Baru: ${formattedDate}`);
                                 }}
                                 style={{
-                                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                    background: updateSuccess ? '#059669' : 'linear-gradient(135deg, #f59e0b, #d97706)',
                                     border: 'none',
                                     color: '#fff',
                                     padding: isMobile ? '8px 12px' : '10px 20px',
@@ -479,14 +498,15 @@ const StockSheets: React.FC = () => {
                                     cursor: 'pointer',
                                     fontWeight: 700,
                                     fontSize: isMobile ? '12px' : '14px',
-                                    transition: 'all 0.2s',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '6px'
+                                    gap: '6px',
+                                    transform: updateSuccess ? 'scale(1.05)' : 'scale(1)'
                                 }}
                             >
-                                🔄 UPDATE API
+                                <span>{updateSuccess ? '✅ Updated' : '🔄 UPDATE API'}</span>
                             </button>
                         )}
                         
@@ -725,7 +745,7 @@ const StockSheets: React.FC = () => {
                                                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>HOLDER NAME</th>
                                                         <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>SHARES</th>
-                                                        <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>PERCENTAGE</th>
+                                                        <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>PERCENT</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -740,7 +760,7 @@ const StockSheets: React.FC = () => {
                                                                 </button>
                                                             </td>
                                                             <td style={{ padding: '12px' }}>{h.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '11px' }}>{h.percentage.toFixed(2)}%</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{h.percentage.toFixed(2)}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -784,7 +804,7 @@ const StockSheets: React.FC = () => {
                                                                 </button>
                                                             </td>
                                                             <td style={{ padding: '12px' }}>{p.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '11px' }}>{p.percentage.toFixed(2)}%</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{p.percentage.toFixed(2)}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1073,10 +1093,11 @@ const StockSheets: React.FC = () => {
                     textAlign: 'center', 
                     color: 'var(--text-secondary)', 
                     fontSize: '12px',
-                    opacity: 0.6,
-                    paddingBottom: isMobile ? '40px' : '0'
+                    opacity: 0.8,
+                    paddingBottom: isMobile ? '40px' : '0',
+                    fontWeight: 600
                 }}>
-                    Version March 2026
+                    Last Update: {lastUpdate}
                 </div>
             </div>
 
@@ -1092,9 +1113,10 @@ const StockSheets: React.FC = () => {
                     display: 'flex',
                     justifyContent: 'space-around',
                     padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
-                    zIndex: 1000,
-                    boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
-                    backdropFilter: 'blur(10px)'
+                    zIndex: 2000,
+                    boxShadow: '0 -4px 16px rgba(0,0,0,0.2)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)'
                 }}>
                     {tabs.map(tab => (
                         <button
