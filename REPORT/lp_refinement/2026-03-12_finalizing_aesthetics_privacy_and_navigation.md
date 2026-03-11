@@ -19,10 +19,9 @@ Refining the Landing Page (LP) for a premium Light theme, enhancing reviewer pri
     - Removed `name` field from `REVIEWS` data and updated the UI to display only the censored email.
 - **Messaging Alignment**:
     - Updated all instances of "H+1" to "**Real-Time KSEI (Maret 2026)**" in `LandingPage.tsx`, `Whatarewe.md`, and bonus HTML assets.
-- **CTA Standardization**: Standardized all "Akses Sekarang" buttons across the LP (unified padding, font size, and removed unwanted background wrappers) to perfectly match the hero CTA.
-- **Final Contrast Polish**: Removed **all** remaining white text on the light theme background (FAQ, Final CTA, and Footer) for 100% theme consistency.
-- **Mobility UX**:
-    - Added a large (44x44px), high-contrast "←" back button to the mobile headers of `DemoDashboard.tsx` and `Auth.tsx`.
+- **Final Contrast Polish**: Removed **all** remaining white text on the light theme background. Darkened "Stop Tebak-tebakan" to solid black (`#000`) and increased visibility of step numbers (01, 02, 03).
+- **Mobile Stabilization**: Disabled zooming on mobile devices to prevent layout skips and ensure a professional app-like feel.
+- **CTA Standardization**: Standardized all "Akses Sekarang" buttons across the LP (unified padding, font size, and removed unwanted background wrappers).
 - **Technical Maintenance**:
     - Fixed CSS linting errors in bonus HTML files.
     - Incremented `APP_VERSION` for cache-busting.
