@@ -593,14 +593,14 @@ export default function LandingPage() {
                             </div>
                         </div>
 
-                        <div style={{ textAlign: 'center' }}>
-                            <button className="btn-primary" style={{ fontSize: '17px', padding: '20px 48px', marginBottom: '12px' }} onClick={() => navigate('/auth')}>
-                                Dapatkan Akses Sekarang →
+                        <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/auth')}>
+                                Akses Sekarang — Rp 99.000
                             </button>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#334155' }}>
-                                ✓ Sekali bayar &nbsp;·&nbsp; ✓ Langsung akses &nbsp;·&nbsp; ✓ 3 PDF Bonus otomatis
-                            </p>
                         </div>
+                        <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px', textAlign: 'center' }}>
+                            Sekali bayar • Tanpa berlangganan • Langsung akses + 3 Bonus PDF
+                        </p>
                     </div>
                 </div>
             </section>
@@ -824,7 +824,7 @@ export default function LandingPage() {
                 <div className={`fade-up ${faqSection.inView ? 'visible' : ''}`} style={{ maxWidth: '700px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                         <div className="section-eyebrow">FAQ</div>
-                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>
+                        <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-1px' }}>
                             Pertanyaan<br /><span className="gradient-text">yang Sering Ditanya</span>
                         </h2>
                     </div>
@@ -847,24 +847,26 @@ export default function LandingPage() {
             <section style={{ padding: '0 6% 100px', textAlign: 'center' }}>
                 <div style={{ maxWidth: '640px', margin: '0 auto' }}>
                     <div className="section-eyebrow" style={{ textAlign: 'center' }}>Mulai Sekarang</div>
-                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#fff', letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: '20px' }}>
+                    <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: '20px' }}>
                         Stop Tebak-tebakan.<br /><span className="gradient-text">Baca Jejaknya.</span>
                     </h2>
                     <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', marginBottom: '36px', lineHeight: 1.7 }}>
                         Ribuan investor ritel sudah menggunakan data ini. Sementara kamu baca halaman ini, whale mungkin sedang akumulasi saham yang besok harganya bergerak.
                     </p>
-                    <button className="btn-primary" style={{ fontSize: '17px', padding: '20px 48px', marginBottom: '12px' }} onClick={() => navigate('/auth')}>
-                        Akses Sekarang — Rp 99.000 →
-                    </button>
-                    <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#334155' }}>
-                        Sekali bayar • Akses langsung • 3 Bonus PDF • Tanpa berlangganan
+                    <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/auth')}>
+                            Akses Sekarang — Rp 99.000
+                        </button>
+                    </div>
+                    <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
+                        Sekali bayar • Tanpa berlangganan • Langsung akses + 3 Bonus PDF
                     </p>
                 </div>
             </section>
 
             {/* ── FOOTER ── */}
             <footer style={{ padding: '40px 6%', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
                     SAHAM<span className="gradient-text">ULTIMATE</span>
                 </div>
                 <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#334155', textAlign: 'center' }}>
@@ -888,9 +890,9 @@ export default function LandingPage() {
                         style={{ background: '#0d1422', border: '1px solid var(--border)', borderRadius: '20px', padding: '40px 36px', maxWidth: '400px', width: '100%', textAlign: 'center' }}
                     >
                         <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔒</div>
-                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', marginBottom: '10px' }}>Login untuk Review</h3>
+                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginBottom: '10px' }}>Login untuk Review</h3>
                         <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.7, marginBottom: '24px' }}>
-                            Hanya <strong style={{ color: '#e2e8f0' }}>verified buyer</strong> yang bisa menulis review. Login dengan akun kamu untuk memastikan keaslian ulasan.
+                            Hanya <strong style={{ color: '#0f172a' }}>verified buyer</strong> yang bisa menulis review. Login dengan akun kamu untuk memastikan keaslian ulasan.
                         </p>
                         <button className="btn-primary" style={{ width: '100%', marginBottom: '10px' }} onClick={() => navigate('/auth')}>
                             Login / Daftar
