@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
+import { Mail, Lock, Eye, EyeOff, Zap, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
 
 // Helper custom SVG icons
 const Sparkline = ({ up }: { up: boolean }) => (
@@ -20,7 +22,8 @@ export default function Auth() {
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
     const [loading, setLoading] = useState(false);
-    const [err, setErr] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [view, setView] = useState<'login' | 'forgot-password'>('login');
     const [tick, setTick] = useState(0);
 
     useEffect(() => {
@@ -34,23 +37,96 @@ export default function Auth() {
         });
     }, [navigate]);
 
-    const handleLogin = async () => {
-        if (!email || !pass) { setErr("Email dan password wajib diisi."); return; }
-        setErr(""); 
+    const handleLogin = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!email || !pass) { toast.error("Email dan password wajib diisi."); return; }
         setLoading(true);
         
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: email.trim().toLowerCase(),
-                password: pass,
+                password: pass.trim().toLowerCase(),
             });
             if (error) throw error;
-            navigate("/sheets");
+
+            if (data.user) {
+                // Check if user is in saham_clients
+                const { data: client, error: clientErr } = await supabase
+                    .from('saham_clients')
+                    .select('*')
+                    .eq('user_email', data.user.email)
+                    .maybeSingle();
+
+                if (clientErr) {
+                    console.error("Client check error:", clientErr);
+                }
+
+                if (client) {
+                    // Update last login
+                    await supabase
+                        .from('saham_clients')
+                        .update({ last_login: new Array().slice.call(new Date().toISOString())[0] ? new Date().toISOString() : new Date().toISOString() })
+                        .eq('user_email', data.user.email);
+                    
+                    toast.success("Selamat datang kembali!");
+                    navigate("/sheets");
+                } else {
+                    // AUTO MIGRATION LOGIC: Check if user has PAID for universal_saham_ultimate
+                    const { data: orders, error: orderErr } = await supabase
+                        .from('orders')
+                        .select('*')
+                        .eq('user_email', data.user.email)
+                        .eq('status', 'PAID')
+                        .ilike('product_name', '%saham ultimate%')
+                        .limit(1);
+
+                    if (orders && orders.length > 0) {
+                        // PAID -> Auto Migrate
+                        const { error: insertErr } = await supabase
+                            .from('saham_clients')
+                            .insert([
+                                { user_email: data.user.email, status: 'active', last_login: new Date().toISOString() }
+                            ]);
+                        
+                        if (insertErr) {
+                            toast.error("Gagal sinkronisasi data client. Hubungi admin.");
+                            await supabase.auth.signOut();
+                        } else {
+                            toast.success("Akses Saham Ultimate diaktifkan secara otomatis!");
+                            navigate("/sheets");
+                        }
+                    } else {
+                        // NOT PAID -> Reject
+                        toast.error("Anda belum membeli. Silahkan beli terlebih dahulu.");
+                        await supabase.auth.signOut();
+                    }
+                }
+            }
         } catch (error: any) {
-            setErr(error.message);
+            toast.error(error.message);
         } finally {
-            setLoading(true); // Keep loading brief for transition
-            setTimeout(() => setLoading(false), 500);
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) { toast.error("Masukkan email untuk reset password."); return; }
+        setLoading(true);
+        try {
+            const { error } = await supabase.functions.invoke('send-reset-password-email', {
+                body: {
+                    email: email.trim().toLowerCase(),
+                    redirectTo: `${window.location.origin}/reset-password`
+                }
+            });
+            if (error) throw error;
+            toast.success("Email reset password telah dikirim. Silahkan cek inbox/spam anda.");
+            setView('login');
+        } catch (error: any) {
+            toast.error(error.message || "Gagal mengirim email reset.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -60,202 +136,259 @@ export default function Auth() {
     }));
 
     return (
-        <div style={{
-            minHeight: "100vh", background: "#f8faff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "Inter, system-ui, sans-serif", position: "relative", overflow: "hidden",
-        }}>
+        <div className="auth-container">
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
-                *{box-sizing:border-box;margin:0;padding:0;}
-                @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-                @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-                @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-                @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-                input:focus{outline:none!important;}
-                
-                @media (max-width: 640px) {
-                    .login-card {
-                        padding: 32px 24px !important;
-                        border-radius: 20px !important;
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.08) !important;
-                    }
-                    .floating-card, .bg-decoration {
-                        display: none !important;
-                    }
+                .auth-container {
+                    --bg-page: #f8fafc;
+                    --bg-card: #ffffff;
+                    --text-primary: #0f172a;
+                    --text-secondary: #475569;
+                    --primary: #2563eb;
+                    --primary-hover: #1d4ed8;
+                    --border: #e2e8f0;
+                    --input-bg: #fdfdfd;
+                    
+                    min-height: 100vh;
+                    background: var(--bg-page);
+                    color: var(--text-primary);
+                    font-family: 'Inter', system-ui, sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 1.5rem;
+                    position: relative;
                 }
+
+                .auth-card {
+                    width: 100%;
+                    max-width: 420px;
+                    background: var(--bg-card);
+                    border: 1px solid var(--border);
+                    border-radius: 20px;
+                    padding: 2.5rem;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+                    animation: fadeUp 0.5s ease-out;
+                }
+
+                @keyframes fadeUp {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                .auth-header {
+                    text-align: center;
+                    margin-bottom: 2rem;
+                }
+
+                .auth-logo {
+                    width: 72px;
+                    height: auto;
+                    margin-bottom: 1.25rem;
+                }
+
+                .auth-h1 {
+                    font-size: 1.75rem;
+                    font-weight: 800;
+                    color: var(--text-primary);
+                    margin-bottom: 0.5rem;
+                    letter-spacing: -0.025em;
+                }
+
+                .auth-p {
+                    font-size: 0.9375rem;
+                    color: var(--text-secondary);
+                    line-height: 1.5;
+                }
+
+                .form-label {
+                    display: block;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    margin-bottom: 0.5rem;
+                }
+
+                .input-wrap {
+                    position: relative;
+                    margin-bottom: 1.25rem;
+                }
+
+                .input-icon {
+                    position: absolute;
+                    left: 1rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #94a3b8;
+                    width: 18px;
+                    height: 18px;
+                }
+
+                .auth-input {
+                    width: 100%;
+                    background: var(--input-bg);
+                    border: 1px solid var(--border);
+                    border-radius: 12px;
+                    padding: 0.75rem 1rem 0.75rem 2.75rem;
+                    font-size: 0.9375rem;
+                    color: var(--text-primary);
+                    outline: none;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+
+                .auth-input:focus {
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+                }
+
+                .btn-eye {
+                    position: absolute;
+                    right: 0.875rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    display: flex;
+                }
+
+                .btn-submit {
+                    width: 100%;
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 0.875rem;
+                    font-size: 0.9375rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: background 0.2s, transform 0.1s;
+                    margin-top: 0.5rem;
+                }
+
+                .btn-submit:hover { background: var(--primary-hover); }
+                .btn-submit:active { transform: scale(0.99); }
+                .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+                .btn-ghost {
+                    background: none;
+                    border: none;
+                    color: var(--primary);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                    padding: 0;
+                }
+
+                .btn-ghost:hover { text-decoration: underline; }
+
+                .nav-back {
+                    position: absolute;
+                    top: 1.5rem;
+                    left: 1.5rem;
+                    width: 40px;
+                    height: 40px;
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    color: var(--text-primary);
+                    transition: all 0.2s;
+                }
+
+                .nav-back:hover { background: #f1f5f9; }
             `}</style>
 
-            {/* Animated BG dots */}
-            <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} viewBox="0 0 110 100" preserveAspectRatio="xMidYMid slice">
-                {dots.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={0.9} fill="#3b82f6" fillOpacity={d.op} />)}
-            </svg>
-
-            {/* Back Button for Mobile */}
-            <button 
-                onClick={() => navigate('/lp')}
-                style={{
-                    position: "absolute",
-                    top: "20px",
-                    left: "20px",
-                    zIndex: 10,
-                    width: "50px",
-                    height: "50px",
-                    borderRadius: "15px",
-                    background: "#fff",
-                    border: "1px solid rgba(0,0,0,0.08)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "24px",
-                    color: "#0f172a",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
-                }}
-            >
-                ←
+            <button onClick={() => navigate('/lp')} className="nav-back">
+                <ArrowLeft size={20} />
             </button>
 
-            {/* Left side decorative */}
-            <div className="bg-decoration" style={{
-                position: "absolute", left: -120, top: "50%", transform: "translateY(-50%)",
-                width: 400, height: 400, borderRadius: "50%",
-                background: "radial-gradient(circle,rgba(59,130,246,0.08),transparent 70%)",
-                pointerEvents: "none"
-            }} />
-            <div className="bg-decoration" style={{
-                position: "absolute", right: -80, bottom: -80,
-                width: 320, height: 320, borderRadius: "50%",
-                background: "radial-gradient(circle,rgba(99,102,241,0.07),transparent 70%)",
-                pointerEvents: "none"
-            }} />
+            <div className="auth-card">
+                <div className="auth-header">
+                    <img src="/saham.png" alt="Logo" className="auth-logo" />
+                    <h1 className="auth-h1">
+                        {view === 'login' ? 'Selamat Datang' : 'Lupa Password'}
+                    </h1>
+                    <p className="auth-p">
+                        {view === 'login' 
+                            ? 'Akses database Whale & Konglomerat IDX sekarang.' 
+                            : 'Masukkan email untuk instruksi reset password.'}
+                    </p>
+                </div>
 
-            {/* Floating mock chart card */}
-            <div className="floating-card" style={{
-                position: "absolute", left: "6%", top: "50%", transform: "translateY(-50%)",
-                background: "#fff", borderRadius: 16, padding: "20px 24px",
-                boxShadow: "0 8px 40px rgba(0,0,0,0.08)", border: "1px solid rgba(0,0,0,0.06)",
-                width: 200, animation: "floatCard 4s ease-in-out infinite",
-            }}>
-                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 8, letterSpacing: 1 }}>WHALE ALERT</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>BBCA +2.14%</div>
-                <div style={{ fontSize: 12, color: "#22c55e", marginBottom: 10 }}>▲ Djarum +12.4M lembar</div>
-                <Sparkline up={true} />
-            </div>
-
-            {/* Login card */}
-            <div className="login-card" style={{
-                background: "#fff", borderRadius: 24, padding: "48px 44px",
-                boxShadow: "0 20px 80px rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.06)",
-                width: "92%", maxWidth: 420, position: "relative", zIndex: 2,
-                animation: "fadeUp 0.6s ease both",
-            }}>
-                {/* Logo */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 36 }}>
-                    <div style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 4px 16px rgba(59,130,246,0.35)",
-                        flexShrink: 0,
-                    }}>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <polyline points="2,14 6,9 10,11 14,5 18,7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <circle cx="18" cy="7" r="2" fill="#fff" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 20, color: "#0f172a", letterSpacing: -0.5 }}>
-                            Saham <span style={{ background: "linear-gradient(135deg,#3b82f6,#6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Ultimate</span>
+                {view === 'login' ? (
+                    <form onSubmit={handleLogin}>
+                        <label className="form-label">Email</label>
+                        <div className="input-wrap">
+                            <Mail className="input-icon" />
+                            <input 
+                                className="auth-input"
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="name@email.com"
+                                required
+                            />
                         </div>
-                        <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1, fontWeight: 500 }}>IDX INTELLIGENCE PLATFORM</div>
-                    </div>
-                </div>
 
-                <h2 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 26, color: "#0f172a", marginBottom: 6 }}>
-                    Selamat datang
-                </h2>
-                <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
-                    Masuk untuk akses data whale & konglomerat IDX secara real-time.
-                </p>
+                        <label className="form-label">Password</label>
+                        <div className="input-wrap">
+                            <Lock className="input-icon" />
+                            <input 
+                                className="auth-input"
+                                type={showPassword ? "text" : "password"}
+                                value={pass}
+                                onChange={e => setPass(e.target.value)}
+                                placeholder="••••••••"
+                                required
+                            />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="btn-eye">
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
 
-                {/* Form */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div>
-                        <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Email</label>
-                        <input value={email} onChange={e => setEmail(e.target.value)}
-                            placeholder="nama@email.com" type="email"
-                            style={{
-                                width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.1)",
-                                fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", color: "#0f172a", background: "#f8faff",
-                                transition: "border 0.2s"
-                            }}
-                            onFocus={e => e.target.style.borderColor = "#3b82f6"}
-                            onBlur={e => e.target.style.borderColor = "rgba(0,0,0,0.1)"}
-                        />
-                    </div>
-                    <div>
-                        <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Password</label>
-                        <input value={pass} onChange={e => setPass(e.target.value)}
-                            placeholder="••••••••" type="password"
-                            style={{
-                                width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.1)",
-                                fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", color: "#0f172a", background: "#f8faff",
-                                transition: "border 0.2s"
-                            }}
-                            onFocus={e => e.target.style.borderColor = "#3b82f6"}
-                            onBlur={e => e.target.style.borderColor = "rgba(0,0,0,0.1)"}
-                            onKeyDown={e => e.key === "Enter" && handleLogin()}
-                        />
-                    </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+                            <button type="button" onClick={() => setView('forgot-password')} className="btn-ghost">
+                                Lupa Password?
+                            </button>
+                        </div>
 
-                    {err && <div style={{ fontSize: 13, color: "#ef4444", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "9px 12px" }}>{err}</div>}
+                        <button className="btn-submit" type="submit" disabled={loading}>
+                            {loading ? 'Memproses...' : 'Masuk →'}
+                        </button>
 
-                    <button onClick={handleLogin} disabled={loading} style={{
-                        marginTop: 4, width: "100%", padding: "13px",
-                        background: loading ? "rgba(59,130,246,0.6)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
-                        border: "none", borderRadius: 10, color: "#fff", fontSize: 15, fontWeight: 700,
-                        cursor: loading ? "not-allowed" : "pointer", fontFamily: "Inter, system-ui, sans-serif",
-                        boxShadow: "0 4px 20px rgba(59,130,246,0.35)",
-                        transition: "all 0.2s",
-                    }}>
-                        {loading ? (
-                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                                <svg width="16" height="16" viewBox="0 0 16 16" style={{ animation: "spin 1s linear infinite" }}>
-                                    <circle cx="8" cy="8" r="6" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                                    <path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                                Masuk...
-                            </span>
-                        ) : "Masuk ke Dashboard →"}
-                    </button>
-                    
-                    <div style={{ marginTop: 12, textAlign: 'center' }}>
-                        <span 
-                            onClick={() => navigate('/lp')} 
-                            style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer', textDecoration: 'underline' }}
-                        >
-                            Ke Landing Page
-                        </span>
-                    </div>
-                </div>
+                        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>Belum punya akses? </span>
+                            <button type="button" onClick={() => navigate('/payment')} className="btn-ghost">Beli Sekarang</button>
+                        </div>
+                    </form>
+                ) : (
+                    <form onSubmit={handleForgotPassword}>
+                        <label className="form-label">Email</label>
+                        <div className="input-wrap">
+                            <Mail className="input-icon" />
+                            <input 
+                                className="auth-input"
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="name@email.com"
+                                required
+                            />
+                        </div>
 
-                {/* Social proof */}
-                <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-                    <div style={{ display: "flex" }}>
-                        {["#3b82f6", "#6366f1", "#f59e0b", "#22c55e"].map((c, i) => (
-                            <div key={i} style={{
-                                width: 24, height: 24, borderRadius: "50%", background: c, border: "2px solid #fff",
-                                marginLeft: i > 0 ? -8 : 0, display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 9, color: "#fff", fontWeight: 700
-                            }}>
-                                {["A", "B", "C", "D"][i]}
-                            </div>
-                        ))}
-                    </div>
-                    <span style={{ fontSize: 12, color: "#64748b" }}>+2,847 investor aktif</span>
-                </div>
+                        <button className="btn-submit" type="submit" disabled={loading}>
+                            {loading ? 'Mengirim...' : 'Kirim Link Reset →'}
+                        </button>
+
+                        <button type="button" onClick={() => setView('login')} className="btn-submit" style={{ background: '#f1f5f9', color: '#475569', marginTop: '0.75rem' }}>
+                            Kembali ke Login
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
     );

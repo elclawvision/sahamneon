@@ -28,7 +28,7 @@ const REVIEWS: ReviewItem[] = [
 const FAQS = [
     {
         q: 'Apa yang saya dapatkan setelah bayar Rp 99.000?',
-        a: 'Akses penuh ke platform Saham Ultimate (data whale Real-Time KSEI, konglomerat, public figures, hot searches, free float screener + CSV download) DAN 3 bonus PDF eksklusif: Cheat Sheet 5 Tanda Whale Sudah Masuk (47 hal), Tutorial Deteksi Gorengan via Free Float (37 hal), dan Watchlist Konglomerat Indonesia 2025 (33 hal). Total nilai setara > Rp 800.000, kamu bayar Rp 99.000. Sekali bayar, akses langsung.'
+        a: 'Akses penuh ke platform Saham Ultimate (data whale Real-Time KSEI, konglomerat, public figures, hot searches, free float screener + CSV download) DAN 3 bonus PDF eksklusif: Cheat Sheet 5 Tanda Whale Sudah Masuk (47 hal), Tutorial Deteksi Gorengan via Free Float (37 hal), dan Watchlist Konglomerat Indonesia 2025 (33 hal). Total nilai setara > Rp 1.147.000, kamu bayar Rp 99.000. Sekali bayar, akses langsung.'
     },
     {
         q: 'Apakah ini berlangganan atau sekali bayar?',
@@ -86,6 +86,44 @@ export default function LandingPage() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [reviewPage, setReviewPage] = useState(0);
     const [loginPrompt, setLoginPrompt] = useState(false);
+    const [freeEbookModal, setFreeEbookModal] = useState(false);
+    const [freeEbookStatus, setFreeEbookStatus] = useState<{ loading: boolean; success: boolean; error: string | null }>({
+        loading: false,
+        success: false,
+        error: null
+    });
+    const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+    const [countdown, setCountdown] = useState('06:00:00');
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            // Using a fixed 6-hour countdown from the first load of the session
+            // or we can just do a simple decrementing timer for the '6 hours left' feel
+            const expiry = localStorage.getItem('promo_expiry');
+            let remaining = 0;
+            
+            if (!expiry) {
+                const sixHoursInMs = 6 * 60 * 60 * 1000;
+                const newExpiry = now + sixHoursInMs;
+                localStorage.setItem('promo_expiry', newExpiry.toString());
+                remaining = sixHoursInMs;
+            } else {
+                remaining = parseInt(expiry) - now;
+            }
+
+            if (remaining <= 0) {
+                setCountdown('00:00:00');
+                clearInterval(timer);
+            } else {
+                const h = Math.floor(remaining / (1000 * 60 * 60));
+                const m = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((remaining % (1000 * 60)) / 1000);
+                setCountdown(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const heroSection = useInView(0.1);
     const offerSection = useInView(0.1);
@@ -97,6 +135,30 @@ export default function LandingPage() {
     const REVIEWS_PER_PAGE = 5;
     const totalPages = Math.ceil(REVIEWS.length / REVIEWS_PER_PAGE);
     const visibleReviews = REVIEWS.slice(reviewPage * REVIEWS_PER_PAGE, (reviewPage + 1) * REVIEWS_PER_PAGE);
+
+    const handleFreeEbook = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFreeEbookStatus({ loading: true, success: false, error: null });
+        try {
+            const response = await fetch('https://elvisiongroup.supabase.co/functions/v1/send-ebooks-free', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    userName: formData.name,
+                    phone: formData.phone,
+                    lang: 'saham'
+                })
+            });
+            if (response.ok) {
+                setFreeEbookStatus({ loading: false, success: true, error: null });
+            } else {
+                throw new Error('Gagal mengirim ebook. Silahkan coba lagi.');
+            }
+        } catch (err: any) {
+            setFreeEbookStatus({ loading: false, success: false, error: err.message });
+        }
+    };
 
     return (
         <div style={{
@@ -172,24 +234,31 @@ export default function LandingPage() {
         }
         .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
 
-        .btn-ghost {
+        .btn-ghost:hover { background: #f1f5f9; border-color: var(--blue); color: #1e293b; }
+
+        .btn-green-gradient {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           padding: 16px 32px;
-          background: transparent;
-          color: #475569;
-          border: 1px solid var(--border);
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: #fff;
+          border: none;
           border-radius: var(--radius);
           font-family: "Syne", sans-serif;
-          font-weight: 600;
+          font-weight: 700;
           font-size: 15px;
           cursor: pointer;
           transition: all 0.25s ease;
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
           white-space: nowrap;
         }
-        .btn-ghost:hover { background: #f1f5f9; border-color: var(--blue); color: #1e293b; }
+        .btn-green-gradient:hover { 
+          background: linear-gradient(135deg, #059669, #047857);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
 
         .glass-card {
           background: var(--surface);
@@ -327,15 +396,20 @@ export default function LandingPage() {
           background-clip: text;
         }
 
-        /* MOBILE */
+        /* MOBILE / DESKTOP UTILS */
         @media (max-width: 640px) {
           .hide-mobile { display: none !important; }
+          .hide-desktop { display: block !important; }
           .hero-btns { flex-direction: column; width: 100%; }
           .hero-btns button { width: 100% !important; }
           .feature-grid { grid-template-columns: 1fr !important; }
           .offer-grid { grid-template-columns: 1fr !important; }
           .how-grid { grid-template-columns: 1fr !important; }
           .review-name-row { flex-direction: column; gap: 4px !important; }
+        }
+        @media (min-width: 641px) {
+          .hide-desktop { display: none !important; }
+          .hide-mobile { display: block !important; }
         }
       `}</style>
 
@@ -359,11 +433,8 @@ export default function LandingPage() {
                     <span className="hide-mobile" style={{ fontSize: '13px', color: '#64748b', fontFamily: '"DM Sans", sans-serif' }}>
                         Data Real-Time KSEI • Maret 2026
                     </span>
-                    <button className="btn-ghost" style={{ padding: '10px 20px', fontSize: '14px' }} onClick={() => navigate('/auth')}>
+                    <button className="btn-ghost hide-mobile" style={{ padding: '10px 24px', fontSize: '14px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
                         Login
-                    </button>
-                    <button className="btn-primary" style={{ padding: '10px 20px', fontSize: '14px' }} onClick={() => navigate('/auth')}>
-                        Mulai →
                     </button>
                 </div>
             </nav>
@@ -428,13 +499,24 @@ export default function LandingPage() {
                         Kamu tidak tahu siapa yang pegang saham itu. Kamu tidak tahu whale sudah masuk atau belum. Kami sudah scrape semuanya secara Real-Time — dan sekarang data itu ada di tanganmu.
                     </p>
 
-                    <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/auth')}>
+                    <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '400px' }}>
+                        <div className="hide-desktop" style={{ width: '100%', marginBottom: '4px' }}>
+                            <button className="btn-ghost" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
+                                Login Member
+                            </button>
+                        </div>
+                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={() => navigate('/payment')}>
                             Akses Sekarang — Rp 99.000
                         </button>
-                        <button className="btn-ghost" style={{ fontSize: '16px', padding: '18px 36px', color: '#1e293b', borderColor: '#e2e8f0' }} onClick={() => navigate('/demo')}>
-                            Demo Gratis →
+                        <button className="btn-green-gradient" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={() => setFreeEbookModal(true)}>
+                            🎁 Ebook Gratis →
                         </button>
+                    </div>
+
+                    <div style={{ marginTop: '24px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 24px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '14px', letterSpacing: '0.05em' }}>🔥 FLASH SALE: <span style={{ fontFamily: 'monospace', fontSize: '18px' }}>{countdown}</span></span>
+                        <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '13px' }}>Promo Ini hanya berlaku hari ini!</span>
+                        <span style={{ color: '#ef4444', fontWeight: 500, fontSize: '12px', opacity: 0.9 }}>Harga Akan naik ke 249.000 Setelah jam ini habis</span>
                     </div>
 
                     <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
@@ -587,13 +669,22 @@ export default function LandingPage() {
                             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <span className="offer-price-new" style={{ color: '#0f172a' }}>Rp 99.000</span>
                             </div>
-                            <div className="badge-pill" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', margin: '0 auto' }}>
+                            <div className="badge-pill" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', margin: '0 auto', marginBottom: '12px' }}>
                                 ⚡ Hemat 91% — Sekali Bayar
+                            </div>
+                            <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>
+                                BERAKHIR DALAM: {countdown}
+                            </div>
+                            <div style={{ color: '#ef4444', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>
+                                Promo Ini hanya berlaku hari ini!
+                            </div>
+                            <div style={{ color: '#ef4444', fontWeight: 500, fontSize: '13px', opacity: 0.9 }}>
+                                Harga Akan naik ke 249.000 Setelah jam ini habis
                             </div>
                         </div>
 
                         <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/auth')}>
+                            <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/payment')}>
                                 Akses Sekarang — Rp 99.000
                             </button>
                         </div>
@@ -850,7 +941,7 @@ export default function LandingPage() {
                         Ribuan investor ritel sudah menggunakan data ini. Sementara kamu baca halaman ini, whale mungkin sedang akumulasi saham yang besok harganya bergerak.
                     </p>
                     <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/auth')}>
+                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/payment')}>
                             Akses Sekarang — Rp 99.000
                         </button>
                     </div>
@@ -875,30 +966,152 @@ export default function LandingPage() {
                 </div>
             </footer>
 
-            {/* ── LOGIN PROMPT MODAL ── */}
-            {loginPrompt && (
+            {/* ── FREE EBOOK MODAL ── */}
+            {freeEbookModal && (
                 <div
-                    onClick={() => setLoginPrompt(false)}
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+                    onClick={() => setFreeEbookModal(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
                 >
                     <div
                         onClick={e => e.stopPropagation()}
-                        style={{ background: '#0d1422', border: '1px solid var(--border)', borderRadius: '20px', padding: '40px 36px', maxWidth: '400px', width: '100%', textAlign: 'center' }}
+                        style={{ 
+                            background: '#0d1422', 
+                            border: '1px solid rgba(139,92,246,0.2)', 
+                            borderRadius: '24px', 
+                            padding: '32px 24px', 
+                            maxWidth: '440px', 
+                            width: '100%', 
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                        }}
                     >
-                        <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔒</div>
-                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginBottom: '10px' }}>Login untuk Review</h3>
-                        <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.7, marginBottom: '24px' }}>
-                            Hanya <strong style={{ color: '#0f172a' }}>verified buyer</strong> yang bisa menulis review. Login dengan akun kamu untuk memastikan keaslian ulasan.
-                        </p>
-                        <button className="btn-primary" style={{ width: '100%', marginBottom: '10px' }} onClick={() => navigate('/auth')}>
-                            Login / Daftar
+                        <button 
+                            onClick={() => setFreeEbookModal(false)}
+                            style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            ×
                         </button>
-                        <button className="btn-ghost" style={{ width: '100%', fontSize: '13px', padding: '12px' }} onClick={() => setLoginPrompt(false)}>
-                            Tutup
-                        </button>
+
+                        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎁</div>
+                            <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: '8px', letterSpacing: '-0.5px' }}>Dapatkan Ebook Gratis</h3>
+                            <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: '#94a3b8', lineHeight: 1.6 }}>
+                                Strategi Mendeteksi Akumulasi Whale & Menghindari Saham Low-Float berbahaya.
+                            </p>
+                        </div>
+
+                        {freeEbookStatus.success ? (
+                            <div style={{ textAlign: 'center', padding: '24px', background: 'rgba(34,197,94,0.1)', borderRadius: '20px', border: '1px solid rgba(34,197,94,0.2)' }}>
+                                <div style={{ fontSize: '42px', marginBottom: '12px' }}>✅</div>
+                                <h4 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Berhasil Dikirim!</h4>
+                                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Silahkan Periksa <strong>WhatsApp</strong> anda. Ketik <strong>Ya</strong> jika anda ingin menerima Free ebook..</p>
+                                <button 
+                                    className="btn-primary" 
+                                    style={{ marginTop: '24px', width: '100%', padding: '14px' }} 
+                                    onClick={() => setFreeEbookModal(false)}
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleFreeEbook} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>NAMA LENGKAP</label>
+                                    <input 
+                                        required
+                                        type="text" 
+                                        placeholder="Nama Kamu"
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px 16px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%' }}
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>NOMOR WHATSAPP</label>
+                                    <div style={{ display: 'flex' }}>
+                                        <div style={{ 
+                                            background: 'rgba(255,255,255,0.02)', 
+                                            border: '1px solid rgba(255,255,255,0.1)', 
+                                            borderRight: 'none', 
+                                            borderRadius: '12px 0 0 12px', 
+                                            padding: '0 14px', 
+                                            fontSize: '15px', 
+                                            fontWeight: 600, 
+                                            color: '#fff', 
+                                            display: 'flex', 
+                                            alignItems: 'center',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            🇮🇩 +62
+                                        </div>
+                                        <input 
+                                            required
+                                            type="tel" 
+                                            placeholder="812345678"
+                                            style={{ 
+                                                flex: 1,
+                                                background: 'rgba(255,255,255,0.05)', 
+                                                border: '1px solid rgba(255,255,255,0.1)', 
+                                                borderRadius: '0 12px 12px 0', 
+                                                padding: '14px 16px', 
+                                                color: '#fff', 
+                                                fontSize: '15px', 
+                                                outline: 'none' 
+                                            }}
+                                            value={formData.phone}
+                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>EMAIL AKTIF</label>
+                                    <input 
+                                        required
+                                        type="email" 
+                                        placeholder="Email Aktif"
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px 16px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%' }}
+                                        value={formData.email}
+                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </div>
+
+                                {freeEbookStatus.error && (
+                                    <p style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center', fontWeight: 600 }}>{freeEbookStatus.error}</p>
+                                )}
+                                
+                                <button 
+                                    type="submit" 
+                                    disabled={freeEbookStatus.loading}
+                                    style={{ 
+                                        width: '100%', 
+                                        marginTop: '12px', 
+                                        padding: '16px', 
+                                        borderRadius: '14px', 
+                                        background: 'var(--blue)', 
+                                        color: '#fff', 
+                                        fontWeight: 800, 
+                                        fontSize: '16px', 
+                                        border: 'none', 
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        opacity: freeEbookStatus.loading ? 0.7 : 1,
+                                        boxShadow: '0 10px 20px -5px rgba(59,130,246,0.3)'
+                                    }}
+                                >
+                                    {freeEbookStatus.loading ? 'Sedang Memproses...' : 'Kirim Ebook ke WA Saya →'}
+                                </button>
+                                
+                                <p style={{ fontSize: '11px', color: '#475569', textAlign: 'center', lineHeight: 1.5, marginTop: '8px' }}>
+                                    🔒 Data kamu aman. eBook akan segera dikirimkan sistem otomatis via WhatsApp & Email.
+                                </p>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
