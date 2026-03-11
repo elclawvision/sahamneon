@@ -1,4 +1,4 @@
-KSEI Ownership Data • 27 Feb 2026
+KSEI Ownership Data
 Know Who Owns
 Every Stock in Indonesia
 Deep ownership intelligence for 955 tickers. AI-powered search, conglomerate maps, and investor network graphs — built from official KSEI data.
@@ -221,4 +221,4 @@ Secure checkout powered by Mayar.id
 Already paid? Login with your email
 Enter your email
 Login
-StockMap Indonesia · Data source: KSEI (27 Feb 2026) · Built by Jatevo
+StockMap Indonesia · Built by Jatevo

@@ -5,6 +5,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Saham AI Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --accent: #3b82f6;
+            --border: #e2e8f0;
+            --table-row-hover: rgba(0, 0, 0, 0.02);
+            --tab-bg: #f1f5f9;
+            --tab-active-bg: #3b82f6;
+            --tab-text: #64748b;
+            --tab-active-text: #ffffff;
+        }
+
+        [data-theme='dark'] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255,255,255,0.02);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255,255,255,0.05);
+            --table-row-hover: rgba(255,255,255,0.03);
+            --tab-bg: rgba(255,255,255,0.03);
+            --tab-active-bg: #3b82f6;
+            --tab-text: #94a3b8;
+            --tab-active-text: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+        #root {
+            min-height: 100vh;
+        }
+    </style>
 </head>
 
 <body>

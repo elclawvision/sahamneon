@@ -59,17 +59,17 @@ const StockTable = <T extends Record<string, any>>({
                 borderCollapse: 'collapse', 
                 textAlign: 'left',
                 fontSize: '14px',
-                color: '#f8fafc'
+                color: 'var(--text-primary)'
             }}>
                 <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
                         {columns.map((col) => (
                             <th 
                                 key={col.key as string}
                                 onClick={() => requestSort(col.key)}
                                 style={{ 
                                     padding: '16px', 
-                                    color: '#94a3b8', 
+                                    color: 'var(--text-secondary)', 
                                     fontWeight: 600, 
                                     cursor: 'pointer',
                                     userSelect: 'none',
@@ -86,10 +86,10 @@ const StockTable = <T extends Record<string, any>>({
                         <tr 
                             key={rowKey(row)} 
                             style={{ 
-                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                borderBottom: '1px solid var(--border)',
                                 transition: 'background 0.2s'
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                            onMouseOver={(e) => e.currentTarget.style.background = 'var(--table-row-hover)'}
                             onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                             {columns.map((col) => (

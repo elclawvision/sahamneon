@@ -260,6 +260,17 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         input:focus{outline:none!important;}
+        
+        @media (max-width: 640px) {
+          .login-card {
+            padding: 32px 24px !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08) !important;
+          }
+          .floating-card, .bg-decoration {
+            display: none !important;
+          }
+        }
       `}</style>
 
       {/* Animated BG dots */}
@@ -268,13 +279,13 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
       </svg>
 
       {/* Left side decorative */}
-      <div style={{
+      <div className="bg-decoration" style={{
         position: "absolute", left: -120, top: "50%", transform: "translateY(-50%)",
         width: 400, height: 400, borderRadius: "50%",
         background: "radial-gradient(circle,rgba(59,130,246,0.08),transparent 70%)",
         pointerEvents: "none"
       }} />
-      <div style={{
+      <div className="bg-decoration" style={{
         position: "absolute", right: -80, bottom: -80,
         width: 320, height: 320, borderRadius: "50%",
         background: "radial-gradient(circle,rgba(99,102,241,0.07),transparent 70%)",
@@ -287,7 +298,6 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
         background: "#fff", borderRadius: 16, padding: "20px 24px",
         boxShadow: "0 8px 40px rgba(0,0,0,0.08)", border: "1px solid rgba(0,0,0,0.06)",
         width: 200, animation: "floatCard 4s ease-in-out infinite",
-        display: "none", // hidden on small screens via media would go here
       }} className="floating-card">
         <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 8, letterSpacing: 1 }}>WHALE ALERT</div>
         <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 4 }}>BBCA +2.14%</div>
@@ -299,9 +309,9 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
       <div style={{
         background: "#fff", borderRadius: 24, padding: "48px 44px",
         boxShadow: "0 20px 80px rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.06)",
-        width: "100%", maxWidth: 420, position: "relative", zIndex: 2,
+        width: "92%", maxWidth: 420, position: "relative", zIndex: 2,
         animation: "fadeUp 0.6s ease both",
-      }}>
+      }} className="login-card">
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 36 }}>
           <div style={{
