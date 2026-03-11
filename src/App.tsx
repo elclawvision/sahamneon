@@ -6,6 +6,7 @@ import StockSheets from './pages/StockSheets';
 import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
 import Payment from './pages/Payment';
+import ReviewPage from './pages/ReviewPage';
 import { supabase } from './lib/supabase';
 import { Toaster } from 'sonner';
 
@@ -40,6 +41,9 @@ function App() {
 
                 {/* Payment Page */}
                 <Route path="/payment" element={<Payment />} />
+
+                {/* Review Page */}
+                <Route path="/review" element={<ReviewPage />} />
 
                 {/* Demo Page: Always accessible */}
                 <Route path="/demo" element={<DemoDashboard />} />

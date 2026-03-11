@@ -324,7 +324,7 @@ export default function Auth() {
                         <label className="form-label">Email</label>
                         <div className="input-wrap">
                             <Mail className="input-icon" />
-                            <input 
+                            <input
                                 className="auth-input"
                                 type="email"
                                 value={email}
@@ -370,7 +370,7 @@ export default function Auth() {
                         <label className="form-label">Email</label>
                         <div className="input-wrap">
                             <Mail className="input-icon" />
-                            <input 
+                            <input
                                 className="auth-input"
                                 type="email"
                                 value={email}

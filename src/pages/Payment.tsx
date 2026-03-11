@@ -27,14 +27,22 @@ const SahamPayment = () => {
 
     const sendWAAlert = async (type: 'attempt' | 'success', details: any) => {
         try {
+            const waToken = "EKOSp9NBSuNVVU";
+            const waInstanceId = "BDD9F9320ECD"; 
             const msg = type === 'attempt'
                 ? `🔔 *Mencoba Checkout SAHAM*\nProduk: ${productName}\nNama: ${details.name}\nWA: ${details.phone}\nMetode: ${details.method}`
                 : `✅ *Checkout SAHAM Sukses*\nRef: ${details.ref}\nNama: ${details.name}\nWA: ${details.phone}\nTotal: Rp${priceIDR.toLocaleString('id-ID')}`;
 
-            await fetch('https://watzapp.web.id/api/message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': '23b62c4255c43489f55fa84693dc0451d89ea5a5c9ec00021a7b77287cdce0b8' },
-                body: JSON.stringify({ phone: "62895325633487", message: msg, token: "23b62c4255c43489f55fa84693dc0451d89ea5a5c9ec00021a7b77287cdce0b8" })
+            const cleanTarget = "62895325633487";
+            const params = new URLSearchParams({
+                instance_id: waInstanceId,
+                access_token: waToken,
+                chatId: cleanTarget + "@c.us",
+                message: msg
+            });
+
+            await fetch(`https://wawp.net/wp-json/awp/v1/send?${params.toString()}`, {
+                method: 'POST'
             });
         } catch (e) { console.error('WA API Error', e); }
     };
@@ -91,35 +99,102 @@ const SahamPayment = () => {
     };
 
     useEffect(() => {
-        let pollInterval: any;
-        
-        if (showInstructions && email) {
-            pollInterval = setInterval(async () => {
-                try {
-                    const { data, error } = await supabase
-                        .from('saham_clients')
-                        .select('idx')
-                        .eq('user_email', email.trim().toLowerCase())
-                        .maybeSingle();
-                    
-                    if (data) {
-                        toast.success("✅ PEMBAYARAN BERHASIL! Akses Anda sudah aktif.");
-                        clearInterval(pollInterval);
-                        // Optionally navigate or let them see the success state
-                        setTimeout(() => {
-                            navigate('/auth');
-                        }, 2000);
-                    }
-                } catch (e) {
-                    console.error("Polling error", e);
-                }
-            }, 5000); // Poll every 5 seconds
+        console.log('🔴 [REALTIME INIT CHECK] showInstructions:', showInstructions, 'paymentData:', paymentData);
+        if (!showInstructions || !paymentData) {
+            console.log('🔴 [REALTIME] Aborting setup: showInstructions is false or paymentData is null');
+            return;
         }
 
+        const tripayRef = paymentData.tripay_reference || paymentData.reference;
+        if (!tripayRef) {
+            console.error('🔴 [REALTIME] ERROR: No tripay_reference or reference found in paymentData!', paymentData);
+            return;
+        }
+        
+        console.log(`🚀 [REALTIME] 🟢 SUCCESS! Start listening for Saham activation on ref: [${tripayRef}]`);
+        const channelName = `payment-status-saham-${tripayRef}`;
+        
+        const channel = supabase.channel(channelName)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'global_product', 
+                filter: `tripay_reference=eq.${tripayRef}` 
+            },
+                (payload: any) => {
+                    console.log('🔥 [REALTIME RAW PAYLOAD RECEIVED] ->', JSON.stringify(payload, null, 2));
+                    console.log(`🔥 [REALTIME STATUS CHECK] Old: ${payload.old?.status} | New: ${payload.new?.status}`);
+                    
+                    if (payload.new?.status === 'PAID') {
+                        console.log('✅ [SUCCESS] Activation detected via realtime! Firing TOAST...');
+                        toast.success("✅ PEMBAYARAN BERHASIL! Akses Anda sudah aktif.", { duration: 10000 });
+                        supabase.removeChannel(channel);
+                        
+                        // Show full-screen success modal with premium design
+                        const modal = document.createElement('div');
+                        modal.innerHTML = `
+                          <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999999; backdrop-filter: blur(8px);">
+                            <div style="background: linear-gradient(135deg, #0A0612 0%, #13141c 50%, #0A0612 100%); padding: 50px; border-radius: 25px; text-align: center; max-width: 90%; box-shadow: 0 25px 80px rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.3); position: relative; overflow: hidden;">
+                              <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"></div>
+                              <div style="position: relative; z-index: 10;">
+                                <div style="font-size: 5rem; margin-bottom: 25px; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));">🎉</div>
+                                <h2 style="font-size: 2.5rem; background: linear-gradient(45deg, #3b82f6, #60a5fa, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; font-weight: bold; font-family: 'Cormorant Garamond', serif;">Pembayaran Berhasil!</h2>
+                                <p style="font-size: 1.4rem; color: #e2e8f0; margin-bottom: 25px; line-height: 1.6;">Akses Saham Ultimate Anda telah aktif.</p>
+                                <button id="sahamLoginBtn" style="background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; border: none; padding: 15px 30px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: all 0.3s ease;">
+                                  Masuk Dashboard
+                                </button>
+                                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 15px; margin-top: 20px;">
+                                  <p style="color: #94a3b8; font-size: 1rem;">Otomatis dialihkan dalam <span id="sahamCountdown" style="color: #60a5fa; font-weight: bold; font-size: 1.2rem;">5</span> detik</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <style>
+                            @keyframes pulse {
+                              0%, 100% { opacity: 0.5; transform: scale(1); }
+                              50% { opacity: 0.8; transform: scale(1.05); }
+                            }
+                          </style>
+                        `;
+                        document.body.appendChild(modal);
+
+                        // Add login button click handler
+                        const loginBtn = document.getElementById('sahamLoginBtn');
+                        if (loginBtn) {
+                          loginBtn.addEventListener('click', () => {
+                            document.body.removeChild(modal);
+                            navigate('/auth');
+                          });
+                        }
+
+                        // Add countdown
+                        let timeLeft = 5;
+                        const countdownEl = document.getElementById('sahamCountdown');
+                        const timer = setInterval(() => {
+                          timeLeft -= 1;
+                          if (countdownEl) countdownEl.innerText = timeLeft.toString();
+                          if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            if (document.body.contains(modal)) {
+                              document.body.removeChild(modal);
+                              navigate('/auth');
+                            }
+                          }
+                        }, 1000);
+                    } else {
+                        console.log('⚠️ [REALTIME] Status was updated, but it is NOT "PAID". It is:', payload.new?.status);
+                    }
+                }
+            ).subscribe((status, err) => {
+                console.log(`📡 [REALTIME SUBSCRIPTION STATUS] channel [${channelName}] is now:`, status);
+                if (err) console.error('❌ [REALTIME SUBSCRIPTION ERROR]:', err);
+            });
+
         return () => {
-            if (pollInterval) clearInterval(pollInterval);
+            console.log(`🛑 [REALTIME] Cleanup: Removing channel [${channelName}]`);
+            supabase.removeChannel(channel);
         };
-    }, [showInstructions, email, navigate]);
+    }, [showInstructions, paymentData, navigate]);
 
     return (
         <div className="saham-pay-container">
