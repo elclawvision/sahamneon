@@ -32,26 +32,37 @@ serve(async (req: Request) => {
       });
     }
 
-    const records = [];
-    const batchSize = 20; // Process in batches to avoid rate limiting or timeouts
+    const records: any[] = [];
+    const batchSize = 200; // GoAPI limit optimization: 200 symbols per fetch (4 requests total for ~720 tickers)
+    const GOAPI_KEY = Deno.env.get("GOAPI_KEY") || "b82c5a5a-c7ad-5756-53e0-ac3a5894";
 
     for (let i = 0; i < tickers.length; i += batchSize) {
       const batch = tickers.slice(i, i + batchSize);
+      const symbols = batch.map((t: any) => t.ticker).join(",");
 
-      await Promise.all(batch.map(async (t) => {
-        const tickerSymbol = `${t.ticker}.JK`;
-        try {
-          const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${tickerSymbol}?interval=1d&range=1d`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
-          });
+      try {
+        const response = await fetch(`https://api.goapi.io/stock/idx/prices?symbols=${symbols}`, {
+          headers: {
+            'X-API-KEY': GOAPI_KEY,
+            'Accept': 'application/json'
+          }
+        });
 
-          if (!response.ok) return;
+        if (!response.ok) {
+          console.error(`GoAPI HTTP error: ${response.status} ${response.statusText}`);
+          continue;
+        }
 
-          const data = await response.json();
-          const meta = data?.chart?.result?.[0]?.meta;
-          const lastPrice = meta?.regularMarketPrice || 0;
-          const prevClose = meta?.previousClose || meta?.chartPreviousClose || 0;
-          const changePerc = prevClose > 0 ? ((lastPrice - prevClose) / prevClose) * 100 : 0;
+        const reqData = await response.json();
+        const results = reqData?.data?.results || [];
+
+        results.forEach((res: any) => {
+          const t = batch.find((b: any) => b.ticker === res.symbol);
+          if (!t) return;
+
+          const lastPrice = res.close || 0;
+          const changePerc = res.change_pct || 0;
+          const volume = res.volume || 0;
 
           if (lastPrice > 0) {
             records.push({
@@ -61,13 +72,14 @@ serve(async (req: Request) => {
               est_free_float: t.est_free_float,
               last_price: lastPrice,
               price_change_perc: parseFloat(changePerc.toFixed(2)),
+              volume: volume,
               last_updated: new Date().toISOString()
             });
           }
-        } catch (e) {
-          console.error(`⚠️ Failed to fetch ${tickerSymbol}:`, e.message);
-        }
-      }));
+        });
+      } catch (e: any) {
+        console.error(`⚠️ Failed to fetch batch ${i / batchSize + 1}:`, e.message);
+      }
 
       console.log(`Processed batch ${i / batchSize + 1} of ${Math.ceil(tickers.length / batchSize)}`);
     }
@@ -95,7 +107,7 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Function Error:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

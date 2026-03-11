@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { STOCKS, ALERTS, CONGLOMERATE_NODES, EDGES, MOCK_SCREENER } from "./saham-mock";
-import ForceGraph2D from "react-force-graph-2d";
 
 /* ─── MINI SPARKLINE ─── */
 
@@ -60,6 +59,100 @@ function MarketLineChart({ data }: { data: { price: number }[] }) {
 }
 
 // SVG graph removed to use ForceGraph2D
+
+/* ──── DAILY REPORT UI ──── */
+interface DailyReportData {
+  title: string;
+  summary: {
+    total_stocks: number;
+    gainers: number;
+    losers: number;
+    unchanged: number;
+    sentiment: string;
+  };
+  whale_movement: {
+    advance_count: number;
+    retreat_count: number;
+    top_advance: string[];
+    top_retreat: string[];
+  };
+  top_sectors: { name: string; avgChange: number; count: number }[];
+  bottom_sectors: { name: string; avgChange: number; count: number }[];
+  gainers: string[];
+  losers: string[];
+}
+
+function DailyReportCard({ data }: { data: DailyReportData }) {
+  if (!data || !data.summary) return null;
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #1e293b, #0f172a)",
+      borderRadius: 20, padding: 24, color: "#fff",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+      position: "relative", overflow: "hidden",
+      border: "1px solid rgba(255,255,255,0.1)",
+      animation: "fadeUp 0.6s ease-out",
+      marginBottom: 24
+    }}>
+      <div style={{
+        position: "absolute", top: -50, right: -50, width: 200, height: 200,
+        background: "radial-gradient(circle, rgba(59,130,246,0.15), transparent 70%)",
+        pointerEvents: "none"
+      }} />
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 24 }}>📰</span>
+          <h2 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: -0.5 }}>{data.title || "Daily Intelligence"}</h2>
+        </div>
+        <div style={{
+          background: data.summary.sentiment?.includes("Bullish") ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+          color: data.summary.sentiment?.includes("Bullish") ? "#4ade80" : "#f87171",
+          padding: "4px 12px", borderRadius: 50, fontSize: 12, fontWeight: 700, border: "1px solid rgba(255,255,255,0.1)"
+        }}>
+          SENTIMEN: {data.summary.sentiment || "Neutral"}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div>
+          <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>PASAR PULSE</div>
+          <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#4ade80" }}>{data.summary.gainers || 0}</div>
+              <div style={{ fontSize: 10, color: "#64748b" }}>Naik</div>
+            </div>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#f87171" }}>{data.summary.losers || 0}</div>
+              <div style={{ fontSize: 10, color: "#64748b" }}>Turun</div>
+            </div>
+          </div>
+        </div>
+
+        {data.whale_movement && (
+          <div>
+            <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, letterSpacing: 1, marginBottom: 12, textTransform: "uppercase" }}>🕵️ WHALE INTELLIGENCE</div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1, background: "rgba(34,197,94,0.05)", padding: 12, borderRadius: 12, border: "1px solid rgba(34,197,94,0.1)" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#4ade80" }}>{data.whale_movement.advance_count || 0}</div>
+                <div style={{ fontSize: 10, color: "#64748b" }}>Giant Advance</div>
+              </div>
+              <div style={{ flex: 1, background: "rgba(239,68,68,0.05)", padding: 12, borderRadius: 12, border: "1px solid rgba(239,68,68,0.1)" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#f87171" }}>{data.whale_movement.retreat_count || 0}</div>
+                <div style={{ fontSize: 10, color: "#64748b" }}>Giant Retreat</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "#e2e8f0", background: "rgba(255,255,255,0.05)", padding: "8px 12px", borderRadius: 8, lineHeight: 1.5 }}>
+              <strong>Whales Advancing:</strong> {data.whale_movement.top_advance?.join(", ") || "Scanning..."}<br />
+              <strong>Whales Retreating:</strong> {data.whale_movement.top_retreat?.join(", ") || "None"}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /* ─── AI CHATBOT ─── */
 function AIChatbot() {
@@ -319,6 +412,7 @@ function LoginPage({ onLogin }: { onLogin: (email: string) => void }) {
 
 /* ─── DASHBOARD ─── */
 function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string | null, onLogout: () => void, onRequestLogin: () => void }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('saham_active_tab') || "overview";
@@ -332,6 +426,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
 
   const [pulseTick, setPulseTick] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dailyReport, setDailyReport] = useState<DailyReportData | null>(null);
 
   // Real Data States
   const [realStocks, setRealStocks] = useState<any[]>([]);
@@ -340,6 +435,28 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
   const [realEdges, setRealEdges] = useState<any[]>([]);
   const [realScreener, setRealScreener] = useState<any[]>([]);
   const [realInvestorWatch, setRealInvestorWatch] = useState<any[]>([]);
+  const [realInvestorTypes, setRealInvestorTypes] = useState<any[]>([]);
+  const [realPublicFigures, setRealPublicFigures] = useState<any[]>([]);
+  const [realHotSearches, setRealHotSearches] = useState<any[]>([]);
+
+  // Computed Free Float Data
+  const realFloatData = useMemo(() => {
+    return realStocks.map(stock => {
+      const floatVal = parseFloat(stock.free_float) || 0;
+      return {
+        id: stock.id,
+        ticker: stock.id,
+        name: stock.name,
+        holders: new Intl.NumberFormat('id-ID').format(stock.holders_count || 0),
+        topHolder: stock.top_holder_name || "-",
+        topPct: (stock.top_holder_pct || 0).toFixed(2) + "%",
+        float: floatVal.toFixed(2) + "%",
+        floatNum: floatVal,
+        whaleStatus: stock.whale_status
+      };
+    });
+  }, [realStocks]);
+
   const [loadingRealData, setLoadingRealData] = useState(false);
   const [realIHSG, setRealIHSG] = useState<any[]>([]);
   const [konglomeratView, setKonglomeratView] = useState<"graph" | "table">("graph");
@@ -445,13 +562,26 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
 
       const fetchRealData = async () => {
         try {
-          const [resTickers, resAlerts, resNodes, resScreener, resInvestors] = await Promise.all([
+          const [resTickers, resAlerts, resNodes, resScreener, resInvestors, resInvTypes, resPublicFlg, resHotSearches, resReport] = await Promise.all([
             supabase.from('saham_tab_tickers').select('*').order('last_price', { ascending: false }),
             supabase.from('saham_tab_whale_tracker').select('*').order('created_at', { ascending: false }),
             supabase.from('saham_tab_konglomerat_v2').select('*'),
             supabase.from('saham_tab_msci_screener').select('*').order('id', { ascending: true }),
-            supabase.from('saham_tab_investor_watch').select('*').order('investor_name', { ascending: true })
+            supabase.from('saham_tab_investor_watch').select('*').order('investor_name', { ascending: true }),
+            supabase.from('saham_investor_types').select('*').order('code', { ascending: true }),
+            supabase.from('saham_tab_public_figures').select('*').order('name', { ascending: true }),
+            supabase.from('saham_tab_hot_searches').select('*').order('views', { ascending: false }),
+            fetch(`https://nlrgdhpmsittuwiiindq.supabase.co/functions/v1/saham-daily-reporter`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+              }
+            }).then(r => r.json()).catch(err => { console.error("Report fetch error", err); return null; })
           ]);
+
+          if (resReport && !resReport.error) {
+            setDailyReport(resReport);
+          }
 
           if (resAlerts.data && !resAlerts.error) {
             setRealAlerts(resAlerts.data);
@@ -459,6 +589,15 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
 
           if (resInvestors.data && !resInvestors.error) {
             setRealInvestorWatch(resInvestors.data);
+          }
+          if (resInvTypes.data && !resInvTypes.error) {
+            setRealInvestorTypes(resInvTypes.data);
+          }
+          if (resPublicFlg.data && !resPublicFlg.error) {
+            setRealPublicFigures(resPublicFlg.data);
+          }
+          if (resHotSearches.data && !resHotSearches.error) {
+            setRealHotSearches(resHotSearches.data);
           }
 
           if (resTickers.data && !resTickers.error && resAlerts.data) {
@@ -469,9 +608,13 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
               price: dbStock.last_price,
               change: dbStock.price_change_perc || 0,
               vol: (dbStock.total_shares / 1000000).toFixed(0) + "M",
-              sector: "-",
-              whale: activeWhaleTickers.has(dbStock.ticker),
-              free_float: dbStock.est_free_float + "%"
+              sector: dbStock.sector || "-",
+              whale: activeWhaleTickers.has(dbStock.ticker) || dbStock.whale_status !== 'NEUTRAL',
+              free_float: dbStock.est_free_float + "%",
+              holders_count: dbStock.holders_count || 0,
+              top_holder_name: dbStock.top_holder_name || "-",
+              top_holder_pct: dbStock.top_holder_pct || 0,
+              whale_status: dbStock.whale_status || 'NEUTRAL'
             }));
             if (mappedData.length > 0) setRealStocks(mappedData);
 
@@ -534,13 +677,40 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
     }
   }, [isPremium]);
 
-  // Determine what Data to show. Mock for marketing, Real for signed in users.
-  const displayStocks = isPremium ? realStocks : STOCKS;
-  const displayAlerts = isPremium ? realAlerts : ALERTS;
-  const displayNodes = isPremium ? realNodes : CONGLOMERATE_NODES;
-  const displayEdges = isPremium ? realEdges : EDGES;
+  // Determine what Data to show. Real data only for this production page.
+  const displayStocks = realStocks;
+  const displayAlerts = realAlerts;
+  const displayNodes = realNodes;
+  const displayEdges = realEdges;
+  const displayScreener = realScreener;
 
-  const displayScreener = isPremium ? realScreener : MOCK_SCREENER;
+  // Calculate dynamic Conglomerate Groups from live Nodes
+  const displayGroups = useMemo(() => {
+    if (!displayNodes || displayNodes.length === 0) return [];
+
+    // Create a map from ticker to whale status for easy lookup
+    const whaleMap: Record<string, string> = {};
+    displayStocks.forEach(s => { whaleMap[s.id] = s.whale_status; });
+
+    // Create a map to count tickers per group
+    const groupCounts: Record<string, { total: number, advance: number, retreat: number }> = {};
+
+    displayNodes.forEach((node) => {
+      if (!node.is_group && node.group_id) {
+        if (!groupCounts[node.group_id]) {
+          groupCounts[node.group_id] = { total: 0, advance: 0, retreat: 0 };
+        }
+        groupCounts[node.group_id].total += 1;
+        const status = whaleMap[node.id];
+        if (status === 'ADVANCE') groupCounts[node.group_id].advance += 1;
+        if (status === 'RETREAT') groupCounts[node.group_id].retreat += 1;
+      }
+    });
+
+    return Object.entries(groupCounts)
+      .map(([name, stats]) => ({ name, ...stats }))
+      .sort((a, b) => b.total - a.total);
+  }, [displayNodes, displayStocks, isPremium]);
 
 
   const NAV = [
@@ -551,6 +721,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
     { id: "investor", icon: "🕵️", label: "Investor Watch" },
     { id: "graph", icon: "🕸", label: "Konglomerat" },
     { id: "screener", icon: "🔬", label: "MSCI Screener" },
+    { id: "sheets_nav", icon: "📂", label: "Stock Sheets" },
     { id: "report", icon: "📈", label: "Intel Report" },
     { id: "ai", icon: "🤖", label: "AI Spotlight" },
   ];
@@ -644,7 +815,13 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.map(n => (
-            <button key={n.id} onClick={() => setActiveTab(n.id)} className="nav-btn"
+            <button key={n.id} onClick={() => {
+              if (n.id === 'sheets_nav') {
+                navigate('/sheets');
+              } else {
+                setActiveTab(n.id);
+              }
+            }} className="nav-btn"
               style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: sidebarOpen ? "10px 12px" : "10px",
@@ -728,37 +905,47 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
           </div>
 
           {/* Live badge */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6, background: "rgba(34,197,94,0.08)",
-            border: "1px solid rgba(34,197,94,0.2)", borderRadius: 50, padding: "4px 12px"
-          }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: "50%", background: "#22c55e",
-              boxShadow: "0 0 0 0 rgba(34,197,94,0.5)", animation: "pulseRing 1.5s infinite"
-            }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>LIVE IDX</span>
-          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Active Members Counter */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(34,197,94,0.1)", padding: "6px 12px", borderRadius: 50 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", animation: "pulseRing 2s infinite" }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", fontFamily: "Inter, system-ui, sans-serif" }}>
+                Member active: {2300 + (pulseTick % 300) + Math.floor(Math.sin(pulseTick) * 50)}
+              </span>
+            </div>
 
-          <div style={{ fontSize: 13, color: "#64748b", fontFamily: "Menlo, Monaco, Consolas, monospace" }}>
-            {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6, background: "rgba(34,197,94,0.08)",
+              border: "1px solid rgba(34,197,94,0.2)", borderRadius: 50, padding: "4px 12px"
+            }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%", background: "#22c55e",
+                boxShadow: "0 0 0 0 rgba(34,197,94,0.5)", animation: "pulseRing 1.5s infinite"
+              }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#16a34a" }}>LIVE IDX</span>
+            </div>
+
+            <div style={{ fontSize: 13, color: "#64748b", fontFamily: "Menlo, Monaco, Consolas, monospace" }}>
+              {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
+            </div>
+            {!userEmail && (
+              <button onClick={onRequestLogin} style={{
+                background: "linear-gradient(135deg,#3b82f6,#6366f1)",
+                border: "none", borderRadius: 9, padding: "8px 18px",
+                color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                fontFamily: "Inter, system-ui, sans-serif",
+                boxShadow: "0 3px 14px rgba(59,130,246,0.3)",
+                whiteSpace: "nowrap",
+              }}>🔓 Masuk / Daftar</button>
+            )}
+            {userEmail && (
+              <button onClick={onLogout} style={{
+                background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)",
+                borderRadius: 9, padding: "8px 16px", color: "#64748b",
+                fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "Inter, system-ui, sans-serif",
+              }}>Keluar</button>
+            )}
           </div>
-          {!userEmail && (
-            <button onClick={onRequestLogin} style={{
-              background: "linear-gradient(135deg,#3b82f6,#6366f1)",
-              border: "none", borderRadius: 9, padding: "8px 18px",
-              color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer",
-              fontFamily: "Inter, system-ui, sans-serif",
-              boxShadow: "0 3px 14px rgba(59,130,246,0.3)",
-              whiteSpace: "nowrap",
-            }}>🔓 Masuk / Daftar</button>
-          )}
-          {userEmail && (
-            <button onClick={onLogout} style={{
-              background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)",
-              borderRadius: 9, padding: "8px 16px", color: "#64748b",
-              fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "Inter, system-ui, sans-serif",
-            }}>Keluar</button>
-          )}
         </header>
 
         {/* Content */}
@@ -774,6 +961,9 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                 </h1>
                 <p style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>Berikut ringkasan pasar IDX hari ini — {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
               </div>
+
+              {/* Daily Report Bot Card */}
+              {isPremium && dailyReport && <DailyReportCard data={dailyReport} />}
 
               {/* Top KPI Cards (Moved from previous location) */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
@@ -862,14 +1052,72 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
             </div>
           )}
 
+          {/* WHALE TRACKER LIVE */}
+          {activeTab === "whale" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24, animation: "fadeUp 0.4s ease both" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🐋 Whale Tracker</h1>
+                  <p style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>Melacak kepemilikan investor besar dan pergerakan institusi (Advance/Retreat).</p>
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>🕒 Last Update: {lastUpdateText}</div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+                {realStocks.filter(s => s.whale_status !== 'NEUTRAL').length === 0 ? (
+                  <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", background: "#f8faff", borderRadius: 16, border: "1px dashed rgba(0,0,0,0.1)", color: "#64748b" }}>
+                    Belum ada pergerakan Whale signifikan hari ini. Scanning {realStocks.length} emiten...
+                  </div>
+                ) : (
+                  realStocks.filter(s => s.whale_status !== 'NEUTRAL').map((s, i) => (
+                    <div key={i} style={{
+                      background: "#fff", padding: 20, borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.02)", display: "flex", flexDirection: "column", gap: 12,
+                      position: "relative", overflow: "hidden"
+                    }}>
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, width: 4, height: "100%",
+                        background: s.whale_status === 'ADVANCE' ? "#22c55e" : "#ef4444"
+                      }} />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          <div style={{ fontFamily: "Menlo, Monaco, Consolas, monospace", fontWeight: 800, fontSize: 18, color: "#0f172a" }}>{s.id}</div>
+                          <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>{s.name}</div>
+                        </div>
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, padding: "4px 8px", borderRadius: 6,
+                          background: s.whale_status === 'ADVANCE' ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                          color: s.whale_status === 'ADVANCE' ? "#16a34a" : "#ef4444",
+                          border: `1px solid ${s.whale_status === 'ADVANCE' ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`
+                        }}>
+                          {s.whale_status}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+                        Raksasa sedang <strong>{s.whale_status === 'ADVANCE' ? 'MASUK' : 'MUNDUR'}</strong>.
+                        Kepemilikan di <strong>{s.top_holder_name}</strong> saat ini <strong>{s.top_holder_pct.toFixed(2)}%</strong>.
+                      </div>
+                      <div style={{ marginTop: 8, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: s.change >= 0 ? "#16a34a" : "#ef4444" }}>
+                          {s.change >= 0 ? "▲" : "▼"} {s.change.toFixed(2)}%
+                        </span>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>Vol: {s.vol}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── TICKER ── */}
           {activeTab === "ticker" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeUp 0.4s ease both" }}>
               <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
                 <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-                    <span style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: "#0f172a" }}>Daftar Lengkap Emiten</span>
-                    <span style={{ fontSize: 13, color: "#64748b" }}>Data 720 Saham & Free Float. Last Update: <strong>{lastUpdateText}</strong></span>
+                    <span style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 16, color: "#0f172a" }}>Daftar Lengkap Emiten ({realStocks.length})</span>
+                    <span style={{ fontSize: 13, color: "#64748b" }}>Data {realStocks.length} Saham & Harga Live. Last Update: <strong>{lastUpdateText}</strong></span>
                   </div>
                   <div style={{ position: "relative", flex: 0.8, maxWidth: 300 }}>
                     <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>🔍</span>
@@ -897,6 +1145,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                         { key: "price", label: "Harga" },
                         { key: "change", label: "Perubahan" },
                         { key: "vol", label: "Volume" },
+                        { key: "sector", label: "Sektor" },
                         { key: "whale", label: "Whale" },
                         { key: null, label: "Chart" }
                       ].map(h => (
@@ -939,6 +1188,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                           }}>{s.change > 0 ? "+" : ""}{s.change}%</span>
                         </td>
                         <td style={{ padding: "12px 16px", fontSize: 12, color: "#64748b", fontFamily: "Menlo, Monaco, Consolas, monospace" }}>{s.vol}</td>
+                        <td style={{ padding: "12px 16px", fontSize: 13, color: "#64748b" }}>{s.sector}</td>
                         <td style={{ padding: "12px 16px" }}>
                           {userEmail ? (
                             s.whale ? (
@@ -1057,8 +1307,8 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
               {!isPremium && <LockGate onRequestLogin={onRequestLogin} label="Free Float Hunter Premium" />}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
                 <div>
-                  <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🎈 Free Float Hunter</h1>
-                  <p style={{ color: "#3b82f6", fontSize: 12, fontWeight: 600, marginTop: 2 }}>🕒 Last Update: {lastUpdateText}</p>
+                  <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🎈 Free Float Hunter Detail ({realStocks.length})</h1>
+                  <p style={{ color: "#3b82f6", fontSize: 12, fontWeight: 600, marginTop: 2 }}>🕒 Detail Kepemilikan Saham & Whale. Last Update: {lastUpdateText}</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {[
@@ -1066,7 +1316,7 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                     { id: "below15", label: "Below 15%" },
                     { id: "mid", label: "Mid (15-50%)" },
                     { id: "high", label: "High (>50%)" },
-                    { id: "all", label: "All 955" }
+                    { id: "all", label: `All ${realFloatData.length}` }
                   ].map(f => (
                     <button
                       key={f.id}
@@ -1106,11 +1356,11 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                     <thead>
                       <tr style={{ background: "#f8faff", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                         {[
-                          { key: "id", label: "TICKER" },
-                          { key: "name", label: "COMPANY" },
-                          { key: "price", label: "PRICE" },
-                          { key: "free_float", label: "EST. FREE FLOAT" },
-                          { key: null, label: "STATUS" }
+                          { key: "ticker", label: "TICKER" },
+                          { key: "holders", label: "HOLDERS" },
+                          { key: "topHolder", label: "TOP HOLDER" },
+                          { key: "topPct", label: "TOP %" },
+                          { key: "float", label: "FREE FLOAT" }
                         ].map(h => (
                           <th
                             key={h.label}
@@ -1132,33 +1382,32 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                       </tr>
                     </thead>
                     <tbody>
-                      {getProcessedData(displayStocks.filter(s => {
-                        const f = parseFloat(s.free_float);
-                        if (floatFilter === "low") return f < 5;
-                        if (floatFilter === "below15") return f < 15;
-                        if (floatFilter === "mid") return f >= 15 && f <= 50;
-                        if (floatFilter === "high") return f > 50;
+                      {getProcessedData(realFloatData).filter(s => {
+                        if (floatFilter === "all") return true;
+                        if (floatFilter === "low") return s.floatNum < 5;
+                        if (floatFilter === "below15") return s.floatNum >= 5 && s.floatNum < 15;
+                        if (floatFilter === "mid") return s.floatNum >= 15 && s.floatNum <= 50;
+                        if (floatFilter === "high") return s.floatNum > 50;
                         return true;
-                      })).slice(0, 100).map((s, i) => {
-                        const floatVal = parseFloat(s.free_float);
+                      }).map((s, i) => {
+                        const floatVal = s.floatNum;
+                        const topVal = parseFloat(s.topPct);
                         const isExtreme = floatVal < 5;
                         const isTight = floatVal < 15;
                         return (
-                          <tr key={i} className="stock-row" style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", transition: "all 0.2s" }}>
-                            <td style={{ padding: "14px 16px", fontFamily: "Menlo, Monaco, Consolas, monospace", fontWeight: 800, fontSize: 14, color: "#0f172a" }}>{s.id}</td>
-                            <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569", fontWeight: 500 }}>{s.name}</td>
-                            <td style={{ padding: "14px 16px", fontSize: 13, color: "#0f172a", fontWeight: 700 }}>Rp{Number(s.price).toLocaleString('id-ID')}</td>
-                            <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 800, color: isExtreme ? "#ef4444" : isTight ? "#f59e0b" : "#3b82f6" }}>
-                              {s.free_float} {isExtreme && "⚠️"}
+                          <tr key={i} className="stock-row" style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", transition: "all 0.2s", background: isExtreme ? "rgba(239,68,68,0.02)" : "transparent" }}>
+                            <td style={{ padding: "14px 16px", fontFamily: "Menlo, Monaco, Consolas, monospace", fontWeight: 800, fontSize: 14, color: "#0f172a" }}>{s.ticker}</td>
+                            <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569", fontWeight: 700 }}>{s.holders}</td>
+                            <td style={{ padding: "14px 16px", fontSize: 13, color: "#0f172a", fontWeight: 600 }}>
+                              {s.topHolder}
+                              {s.whaleStatus === 'ADVANCE' && <span style={{ marginLeft: 6, fontSize: 10, background: "rgba(34,197,94,0.1)", color: "#16a34a", padding: "2px 6px", borderRadius: 4, fontWeight: 800 }}>🐋 ADVANCE</span>}
+                              {s.whaleStatus === 'RETREAT' && <span style={{ marginLeft: 6, fontSize: 10, background: "rgba(239,68,68,0.1)", color: "#ef4444", padding: "2px 6px", borderRadius: 4, fontWeight: 800 }}>🐋 RETREAT</span>}
                             </td>
-                            <td style={{ padding: "14px 16px" }}>
-                              <span style={{
-                                fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 50,
-                                background: isExtreme ? "rgba(239,68,68,0.1)" : isTight ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)",
-                                color: isExtreme ? "#dc2626" : isTight ? "#d97706" : "#2563eb"
-                              }}>
-                                {isExtreme ? "LOW LIQUIDITY" : isTight ? "TIGHT FLOAT" : floatVal > 50 ? "INSTITUTIONAL" : "MID FLOAT"}
-                              </span>
+                            <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: topVal > 50 ? "#ef4444" : "#f59e0b" }}>
+                              {s.topPct}
+                            </td>
+                            <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 800, color: isExtreme ? "#ef4444" : isTight ? "#f59e0b" : "#3b82f6" }}>
+                              {s.float} {isExtreme && "⚠️"}
                             </td>
                           </tr>
                         );
@@ -1196,72 +1445,49 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 20 }}>
-                {/* LKH Hidden Holdings */}
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>👴</div>
-                    <div>
-                      <div style={{ fontWeight: 800, color: "#0f172a" }}>Lo Kheng Hong Watch</div>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>Hidden Holdings (1% - 5%)</div>
-                    </div>
+              <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginTop: 20 }}>
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "#f8faff" }}>
+                  <div style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Investor Type Classification</div>
+                  <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+                    KSEI classifies shareholders into 8 categories. We label them as STRATEGIC or FREE FLOAT based on MSCI Index methodologies.
                   </div>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                     <thead>
-                      <tr style={{ textAlign: "left", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                        {[
-                          { key: "ticker", label: "TICKER" },
-                          { key: "percentage", label: "EST. OWNERSHIP" },
-                          { key: "status", label: "STATUS" }
-                        ].map(h => (
-                          <th
-                            key={h.label} onClick={() => h.key && requestSort(h.key)}
-                            style={{ padding: "10px 0", fontSize: 11, color: "#94a3b8", cursor: "pointer" }}
-                          >
-                            {h.label} {sortConfig?.key === h.key && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                            {sortConfig?.key !== h.key && <span style={{ opacity: 0.2, marginLeft: 2 }}>⇅</span>}
-                          </th>
-                        ))}
+                      <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                        <th style={{ padding: "12px 20px", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>CODE</th>
+                        <th style={{ padding: "12px 20px", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>TYPE</th>
+                        <th style={{ padding: "12px 20px", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>CLASSIFICATION</th>
+                        <th style={{ padding: "12px 20px", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>RATIONALE</th>
+                        <th style={{ padding: "12px 20px", fontSize: 12, color: "#94a3b8", fontWeight: 700, textAlign: "right" }}>ACTIVE IDX HOLDINGS</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {getProcessedData(realInvestorWatch.filter(i => i.type === 'LKH')).map((v, i) => (
-                        <tr key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
-                          <td style={{ padding: "12px 0", fontFamily: "monospace", fontWeight: 700, color: "#3b82f6" }}>{v.ticker}</td>
-                          <td style={{ padding: "12px 0", fontWeight: 700, color: "#1e293b" }}>{v.percentage}</td>
-                          <td style={{ padding: "12px 0" }}><span style={{ fontSize: 10, fontWeight: 700, color: "#64748b" }}>{v.status}</span></td>
+                      {getProcessedData(realInvestorTypes).map((inv, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                          <td style={{ padding: "16px 20px", fontFamily: "Menlo, Monaco, Consolas, monospace", fontWeight: 800, color: "#3b82f6", fontSize: 13 }}>{inv.code}</td>
+                          <td style={{ padding: "16px 20px", fontWeight: 700, color: "#0f172a", fontSize: 13 }}>{inv.type}</td>
+                          <td style={{ padding: "16px 20px" }}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 6, letterSpacing: 0.5,
+                              background: inv.classification === "STRATEGIC" ? "rgba(139,92,246,0.1)" : "rgba(34,197,94,0.1)",
+                              color: inv.classification === "STRATEGIC" ? "#7c3aed" : "#16a34a",
+                              border: `1px solid ${inv.classification === "STRATEGIC" ? "rgba(139,92,246,0.2)" : "rgba(34,197,94,0.2)"}`
+                            }}>
+                              {inv.classification}
+                            </span>
+                          </td>
+                          <td style={{ padding: "16px 20px", fontSize: 13, color: "#64748b", lineHeight: 1.5, maxWidth: 350 }}>
+                            {inv.rationale}
+                          </td>
+                          <td style={{ padding: "16px 20px", fontWeight: 700, color: "#475569", fontSize: 13, textAlign: "right" }}>
+                            {inv.active_holdings}
+                          </td>
                         </tr>
                       ))}
-                      {realInvestorWatch.filter(i => i.type === 'LKH').length === 0 && (
-                        <tr><td colSpan={3} style={{ padding: "20px 0", textAlign: "center", fontSize: 12, color: "#94a3b8" }}>Belum ada data investor.</td></tr>
-                      )}
                     </tbody>
                   </table>
-                </div>
-
-                {/* Mutual Fund Top Bets */}
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏦</div>
-                    <div>
-                      <div style={{ fontWeight: 800, color: "#0f172a" }}>Top Mutual Funds Bets</div>
-                      <div style={{ fontSize: 12, color: "#64748b" }}>Top holdings in big reksa dana</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {getProcessedData(realInvestorWatch.filter(i => i.type === 'Fund')).map((f, i) => (
-                      <div key={i} style={{ padding: "12px", borderRadius: 12, background: "#f8faff", border: "1px solid rgba(0,0,0,0.03)" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 4 }}>{f.investor_name}</div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 800, color: "#1e293b" }}>{f.ticker}</span>
-                          <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 700 }}>{f.percentage} Holding</span>
-                        </div>
-                      </div>
-                    ))}
-                    {realInvestorWatch.filter(i => i.type === 'Fund').length === 0 && (
-                      <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "#94a3b8" }}>Belum ada data Mutual Funds.</div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1269,161 +1495,190 @@ function Dashboard({ userEmail, onLogout, onRequestLogin }: { userEmail: string 
 
           {/* ── CONGLOMERATE ── */}
           {activeTab === "graph" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeUp 0.4s ease both", position: "relative" }}>
-              {!isPremium && <LockGate onRequestLogin={onRequestLogin} label="Peta Konglomerat Premium" />}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-                <div>
-                  <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🕸 Peta Konglomerat IDX</h1>
-                  <p style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>Jaringan kepemilikan saham oleh grup bisnis besar di Indonesia. Diupdate secara otomatis.</p>
-                  <p style={{ color: "#3b82f6", fontSize: 12, fontWeight: 600, marginTop: 2 }}>🕒 Last Update: {lastUpdateText}</p>
-                </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    onClick={() => setKonglomeratView("graph")}
-                    style={{
-                      padding: "6px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
-                      background: konglomeratView === "graph" ? "rgba(59,130,246,0.1)" : "transparent",
-                      color: konglomeratView === "graph" ? "#3b82f6" : "#64748b"
-                    }}>Grafik 3D</button>
-                  <button
-                    onClick={() => setKonglomeratView("table")}
-                    style={{
-                      padding: "6px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
-                      background: konglomeratView === "table" ? "rgba(59,130,246,0.1)" : "transparent",
-                      color: konglomeratView === "table" ? "#3b82f6" : "#64748b"
-                    }}>Tabel Data</button>
-                </div>
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 32, animation: "fadeUp 0.4s ease both", position: "relative" }}>
+              {!isPremium && <LockGate onRequestLogin={onRequestLogin} label="Peta Investor Premium" />}
 
-              {konglomeratView === "graph" ? (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
-                  {/* D3 Graph View */}
-                  <div style={{ background: "#fff", borderRadius: 16, padding: 8, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", minHeight: 600 }}>
-                    <div style={{ padding: "16px 16px 8px 16px", fontSize: 13, color: "#64748b", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>Interaktif D3.js — Drag node untuk memutus gravitasi, scroll untuk zoom.</span>
-                      <span style={{ fontSize: 11, background: "rgba(59,130,246,0.1)", color: "#3b82f6", padding: "4px 10px", borderRadius: 50, fontWeight: 700 }}>LIVE PHYSICS</span>
-                    </div>
-                    <div style={{ width: "100%", height: 550 }}>
-                      <ForceGraph2D
-                        graphData={{ nodes: displayNodes, links: displayEdges }}
-                        nodeLabel={(n: any) => `
-                        <div style="padding: 10px; background: rgba(15,23,42,0.95); color: #fff; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0,0,0,0.3)">
-                          <div style="font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 6px; padding-bottom: 6px; font-size: 14px; color: ${n.borderColor || '#fff'}">${n.name || n.id}</div>
-                          ${n.item_type ? `<div style="color: #94a3b8; margin-bottom: 4px">${n.item_type}</div>` : ''}
-                          ${n.market_cap_val ? `<div style="color: #f59e0b; font-weight: 700">Market Cap: Rp${(Number(n.market_cap_val) / 1e12).toFixed(1)}T</div>` : ''}
-                          ${n.ownership_perc ? `<div style="color: #4ade80; font-weight: 700">Ownership: ${n.ownership_perc}%</div>` : ''}
-                          ${n.sector ? `<div style="color: #60a5fa">${n.sector}</div>` : ''}
-                        </div>
-                      `}
-                        nodeCanvasObject={(node: any, ctx, globalScale) => {
-                          const label = node.name || node.id;
-                          const fontSize = node.is_group ? 14 / globalScale : 10 / globalScale;
-                          const r = Math.sqrt(node.val || 10) / globalScale * 3;
+              <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
 
-                          // Draw Halo / Glow for Groups
-                          if (node.is_group) {
-                            ctx.beginPath();
-                            ctx.arc(node.x, node.y, r * 1.4, 0, 2 * Math.PI, false);
-                            ctx.fillStyle = `${node.borderColor}22`;
-                            ctx.fill();
-                          }
+                {/* ── LEFT MAIN: Conglomerates & Public Figures ── */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 32 }}>
 
-                          // Draw Node Body
-                          ctx.beginPath();
-                          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-                          ctx.fillStyle = node.color;
-                          ctx.fill();
-
-                          // Add Border (Core-Halo)
-                          ctx.strokeStyle = node.borderColor;
-                          ctx.lineWidth = node.is_group ? 2 / globalScale : 1.5 / globalScale;
-                          ctx.stroke();
-
-                          // Draw Text for Groups or high zoom
-                          if (node.is_group || globalScale > 1.5) {
-                            ctx.font = `${node.is_group ? 'bold' : 'normal'} ${fontSize}px Inter, system-ui`;
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillStyle = '#1e293b';
-                            ctx.fillText(label, node.x, node.y + r + (node.is_group ? 8 : 6) / globalScale);
-                          }
-                        }}
-                        nodePointerAreaPaint={(node: any, color, ctx) => {
-                          const r = Math.sqrt(node.val || 10) * 1.5;
-                          ctx.fillStyle = color;
-                          ctx.beginPath(); ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false); ctx.fill();
-                        }}
-                        linkColor={(link: any) => link.color}
-                        linkWidth={1.5}
-                        linkCurvature="curvature"
-                        linkDirectionalParticles={1}
-                        linkDirectionalParticleSpeed={0.003}
-                        width={undefined}
-                        height={550}
-                        backgroundColor="#f8faff"
-                        warmupTicks={150}
-                        cooldownTicks={0}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 18 Groups Mapping */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 600, overflowY: "auto", paddingRight: 4 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>18 Peta Konglomerat</div>
-                    {(isPremium ? displayNodes.filter((n: any) => n.is_group) : displayNodes.filter((n: any) => n.group && !n.id.match(/^[A-Z]{4}$/))).map((g: any, i: number) => (
-                      <div key={i} style={{
-                        background: "#fff", borderRadius: 12, padding: 18, border: `1px solid ${g.color}33`,
-                        borderLeft: `5px solid ${g.color}`, boxShadow: "0 2px 8px rgba(0,0,0,0.03)", transition: "transform 0.15s", cursor: "pointer"
-                      }} onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => e.currentTarget.style.transform = "translateX(4px)"} onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => e.currentTarget.style.transform = "translateX(0)"}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                          <div style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 15, color: "#0f172a" }}>{g.name}</div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: g.color, background: `${g.color}15`, padding: "2px 8px", borderRadius: 50 }}>{g.cap || (g.market_cap_val ? `Rp${(Number(g.market_cap_val) / 1e12).toFixed(0)}T` : "—")}</div>
-                        </div>
-                        <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, marginBottom: g.ai_insight ? 10 : 0 }}>{g.desc}</div>
-
-                        {g.ai_insight && (
-                          <div style={{
-                            marginTop: 8, padding: "8px 12px", background: "rgba(59,130,246,0.05)",
-                            borderRadius: 8, borderLeft: "3px solid #3b82f6", fontSize: 11, color: "#1e40af"
-                          }}>
-                            <span style={{ fontWeight: 800, display: "block", marginBottom: 2 }}>🤖 AI SPOTLIGHT</span>
-                            {g.ai_insight}
-                          </div>
-                        )}
+                  {/* CONGLOMERATES */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+                      <div>
+                        <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🏢 Conglomerates</h1>
+                        <p style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>Jaringan kepemilikan saham oleh grup bisnis besar di Indonesia.</p>
                       </div>
-                    ))}
+                    </div>
 
-                    <div style={{ background: "rgba(59,130,246,0.04)", borderRadius: 12, padding: 16, border: "1px dashed rgba(59,130,246,0.3)", textAlign: "center", marginTop: 8 }}>
-                      <div style={{ fontSize: 12, color: "#3b82f6", fontWeight: 600 }}>Tampilkan semua grup...</div>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                      gap: 16,
+                      marginTop: 16
+                    }}>
+                      {displayGroups.map((group, i) => (
+                        <div key={i} style={{
+                          background: "#fff",
+                          borderRadius: 16,
+                          padding: "16px 20px",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                          onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = "translateY(-3px)";
+                            e.currentTarget.style.boxShadow = "0 12px 24px rgba(0,0,0,0.06)";
+                            e.currentTarget.style.borderColor = "rgba(59,130,246,0.2)";
+                          }}
+                          onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.02)";
+                            e.currentTarget.style.borderColor = "rgba(0,0,0,0.06)";
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                              <div style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 16, color: "#0f172a" }}>
+                                {group.name}
+                              </div>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                {group.advance > 0 && <span style={{ fontSize: 9, fontWeight: 800, color: "#16a34a", background: "rgba(34,197,94,0.1)", padding: "2px 6px", borderRadius: 4 }}>{group.advance} ADV</span>}
+                                {group.retreat > 0 && <span style={{ fontSize: 9, fontWeight: 800, color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: 4 }}>{group.retreat} RET</span>}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>{group.total} stocks</div>
+                          </div>
+                          <div style={{ color: "#cbd5e1", fontSize: 22, fontWeight: 300 }}>
+                            ›
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* PUBLIC FIGURES */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+                      <div>
+                        <h1 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 22, color: "#0f172a" }}>🏛️ Public Figures</h1>
+                        <p style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>Tokoh masyarakat, politikus, dan triliuner individu.</p>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                      gap: 16,
+                      marginTop: 16
+                    }}>
+                      {realPublicFigures.map((fig: any, i: number) => (
+                        <div key={i} style={{
+                          background: "#fff",
+                          borderRadius: 16,
+                          padding: "16px 20px",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                          onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = "translateY(-3px)";
+                            e.currentTarget.style.boxShadow = "0 12px 24px rgba(0,0,0,0.06)";
+                            e.currentTarget.style.borderColor = "rgba(59,130,246,0.3)";
+                          }}
+                          onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.02)";
+                            e.currentTarget.style.borderColor = "rgba(0,0,0,0.06)";
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                            <div>
+                              <div style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 14, color: "#0f172a" }}>
+                                {fig.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, lineHeight: 1.4, maxWidth: 220 }}>
+                                {fig.desc}
+                              </div>
+                            </div>
+                            <span style={{
+                              fontSize: 9, fontWeight: 800,
+                              background: fig.status === "ACTIVE" ? "rgba(34,197,94,0.1)" : fig.status === "TYCOON" ? "rgba(139,92,246,0.1)" : "rgba(100,116,139,0.1)",
+                              color: fig.status === "ACTIVE" ? "#16a34a" : fig.status === "TYCOON" ? "#7c3aed" : "#475569",
+                              padding: "4px 8px", borderRadius: 4, letterSpacing: 0.5
+                            }}>{fig.status}</span>
+                          </div>
+
+                          <div style={{ background: "#f8faff", padding: "10px 14px", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div>
+                              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, marginBottom: 2 }}>POSITIONS</div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a" }}>{fig.positions} pos</div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 700, marginBottom: 2 }}>TOP HOLDING</div>
+                              <div style={{ fontSize: 14, fontWeight: 800, color: "#3b82f6" }}>{fig.topTicker} <span style={{ color: "#0f172a", fontSize: 12 }}>{fig.topPct}</span></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                    <thead>
-                      <tr style={{ background: "#f8faff", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-                        <th style={{ padding: "14px 16px", fontSize: 13, color: "#64748b", fontWeight: 700 }}>TICKER</th>
-                        <th style={{ padding: "14px 16px", fontSize: 13, color: "#64748b", fontWeight: 700 }}>COMPANY / OWNER</th>
-                        <th style={{ padding: "14px 16px", fontSize: 13, color: "#64748b", fontWeight: 700 }}>GROUP</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayNodes.filter((n: any) => !n.is_group).map((n: any, i: number) => (
-                        <tr key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
-                          <td style={{ padding: "14px 16px", fontFamily: "monospace", fontWeight: 800, color: "#3b82f6" }}>{n.id}</td>
-                          <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569", fontWeight: 500 }}>{n.name}</td>
-                          <td style={{ padding: "14px 16px" }}>
-                            <span style={{ padding: "4px 8px", background: "rgba(0,0,0,0.04)", borderRadius: 6, fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
-                              {n.group}
-                            </span>
-                          </td>
-                        </tr>
+
+                {/* ── RIGHT SIDEBAR: Hot Searches ── */}
+                <div style={{ width: 280, flexShrink: 0 }}>
+                  <div style={{
+                    background: "#fff",
+                    borderRadius: 16,
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                    padding: 20
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                      <span style={{ fontSize: 18 }}>🔥</span>
+                      <h2 style={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 800, fontSize: 15, color: "#0f172a", margin: 0 }}>
+                        HOT SEARCHES
+                      </h2>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {realHotSearches.map((search: any, idx: number) => (
+                        <div key={idx} style={{
+                          display: "flex", alignItems: "center", gap: 12
+                        }}>
+                          <div style={{
+                            width: 24, height: 24, borderRadius: "50%",
+                            background: idx < 3 ? "rgba(245,158,11,0.1)" : "rgba(0,0,0,0.03)",
+                            color: idx < 3 ? "#d97706" : "#64748b",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 11, fontWeight: 800
+                          }}>
+                            {idx + 1}
+                          </div>
+                          <div style={{ flex: 1, overflow: "hidden" }}>
+                            <div style={{
+                              fontSize: 12, fontWeight: 700, color: "#0f172a",
+                              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+                            }}>
+                              {search.name}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500, marginTop: 2 }}>
+                              {search.views.toLocaleString('id-ID')} views
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
                 </div>
-              )}
+
+              </div>
             </div>
           )}
 
@@ -1714,30 +1969,84 @@ export default function App() {
   const [user, setUser] = useState<string | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
+  // Generate a unique device ID for this browser if it doesn't exist
+  const getDeviceId = () => {
+    let devId = localStorage.getItem('saham_device_id');
+    if (!devId) {
+      devId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('saham_device_id', devId);
+    }
+    return devId;
+  };
+
   useEffect(() => {
-    const recordClient = async (user_email: string) => {
+    const deviceId = getDeviceId();
+    let sessionCheckInterval: any = null;
+
+    const recordClient = async (user_email: string, user_id: string | undefined) => {
       if (!user_email) return;
       try {
+        // Track legacy client login
         await supabase.from('saham_clients').upsert({ user_email, last_login: new Date().toISOString() }, { onConflict: 'user_email' });
+
+        // Single Session Enforcement: Register this device as the active one
+        if (user_id) {
+          await supabase.rpc('register_active_session', { p_user_id: user_id, p_device_id: deviceId });
+        }
       } catch (e) {
         console.error("Tracking error", e);
       }
     };
 
+    // Verify if current device is still the active one
+    const verifySession = async (user_id: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('active_user_sessions')
+          .select('device_id')
+          .eq('user_id', user_id)
+          .single();
+
+        if (!error && data) {
+          if (data.device_id !== deviceId) {
+            console.warn("Session hijacked/overwritten by another device. Kicking out.");
+            alert("Sesi Anda telah berakhir karena akun digunakan di perangkat lain.");
+            await supabase.auth.signOut();
+          }
+        }
+      } catch (e) {
+        console.error("Session verification failed", e);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const email = session?.user?.email || null;
+      const uid = session?.user?.id;
       setUser(email);
       setLoadingConfig(false);
-      if (email) recordClient(email);
+      if (email) {
+        // recordClient(email, uid);
+        // sessionCheckInterval = setInterval(() => verifySession(uid!), 15000); // Check every 15s
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const email = session?.user?.email || null;
+      const uid = session?.user?.id;
       setUser(email);
-      if (email) recordClient(email);
+
+      if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+
+      if (email) {
+        // recordClient(email, uid);
+        // sessionCheckInterval = setInterval(() => verifySession(uid!), 15000);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+    };
   }, []);
 
   const handleRequestLogin = () => {

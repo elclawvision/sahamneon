@@ -31,7 +31,7 @@ export default function Auth() {
         const checkUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                navigate(-1); // Go back to where they came from
+                navigate("/saham"); // Go to real dashboard
             }
         };
         checkUser();
@@ -47,7 +47,7 @@ export default function Auth() {
                 password: loginData.password,
             });
             if (error) throw error;
-            navigate("/");
+            navigate("/saham");
         } catch (error: any) {
             setErrorMsg(error.message);
         } finally {
@@ -78,12 +78,12 @@ export default function Auth() {
                         password: signupData.password
                     });
                     if (loginError) throw loginError;
-                    navigate("/");
+                    navigate("/saham");
                     return;
                 }
                 throw error;
             }
-            navigate("/");
+            navigate("/saham");
         } catch (error: any) {
             setErrorMsg(error.message);
         } finally {

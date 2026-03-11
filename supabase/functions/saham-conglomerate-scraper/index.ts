@@ -4,29 +4,27 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const DB_URL = Deno.env.get("SUPABASE_URL")!;
 const DB_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// 20 MAJOR INDONESIAN CONGLOMERATES MAPPING
+// 18 MAJOR INDONESIAN CONGLOMERATES MAPPING (As requested by User)
 // We match against either the 'company_name' or the 'ticker' itself.
 const CONGLOMERATE_MAPPING: Record<string, string[]> = {
-    "DJARUM": ["DWIMURIA", "BANK CENTRAL ASIA", "BBCA", "TOWR", "BELI"],
-    "SALIM": ["ANTHONI SALIM", "INDOFOOD", "ICBP", "INDF", "LSIP", "AMRT", "DNET", "FAST"],
-    "SINARMAS": ["SINAR MAS", "INDAH KIAT", "INKP", "TKIM", "BSDE", "SMMA", "DUTAYASA", "DSSA", "SMRA"],
-    "ASTRA": ["ASTRA INTERNATIONAL", "ASII", "UNTR", "AALI"],
-    "BARITO": ["PRAJOGO PANGESTU", "BARITO PACIFIC", "BRPT", "TPIA", "BREN", "CUAN"],
-    "LIPPO": ["LIPPO", "LPKR", "MPPA", "SILO", "MLPL", "NOBU"],
-    "MNC": ["HARY TANOE", "GLOBAL MEDIACOM", "MNCN", "BMTR", "MSIN"],
-    "BAKRIE": ["BAKRIE", "BUMI", "BRMS", "ENRG", "UNSP"],
-    "CTCORP": ["CHAIRUL TANJUNG", "BANK MEGA", "MEGA", "TRANSMART"],
-    "MAYAPADA": ["TAHIR", "MAYAPADA", "MAYA"],
-    "EMTEK": ["ELANG MAHKOTA", "EMTEK", "SCMA", "BUKA"],
-    "SARATOGA": ["SARATOGA", "SRTG", "ADRO", "MDKA", "TBIG", "PALM"],
-    "PANIN": ["PANIN", "PNBN", "PNLF", "PNIN"],
-    "MEDCO": ["MEDCO", "MEDC", "AMMN"],
-    "ADARO": ["ADARO", "ADRO", "ADMR"],
-    "TRIPUTRA": ["TRIPUTRA", "TAPG", "DRMA"],
-    "WILMAR": ["WILMAR", "CEKA"],
-    "CIPUTRA": ["CIPUTRA", "CTRA", "METRODATA", "MTDL"],
-    "AKR": ["AKR CORPORINDO", "AKRA", "JIIPE"],
-    "BAYAN": ["LOW TUCK KWONG", "BAYAN", "BYAN"]
+    "Bakrie Group": ["BAKRIE", "BUMI", "BRMS", "ENRG", "UNSP", "DEWA", "BNBR", "VKTR", "MDIA"],
+    "MNC Group": ["HARY TANOE", "GLOBAL MEDIACOM", "MNCN", "BMTR", "MSIN", "BHIT", "KPIG", "BABP", "BCAP", "IPTV"],
+    "Lippo Group": ["LIPPO", "LPKR", "MPPA", "SILO", "MLPL", "NOBU", "LPPF", "LPCK", "LINK", "GOLL", "ZONE", "LPLI"],
+    "Salim Group": ["ANTHONI SALIM", "INDOFOOD", "ICBP", "INDF", "LSIP", "AMRT", "DNET", "FAST", "META", "NISP", "ROTI", "SIMP", "BINA", "CASA"],
+    "Sinar Mas Group": ["SINAR MAS", "INDAH KIAT", "INKP", "TKIM", "BSDE", "SMMA", "DUTAYASA", "DSSA", "SMRA", "FREN", "BSIM", "DMAS"],
+    "Boy Tohir": ["GARIBALDI TOHIR", "ADRO", "ADMR", "ESSA", "MBMA", "MDKA", "GOTO"],
+    "TP Rachmat": ["THEODORE PERMATADI RACHMAT", "TRIPUTRA", "TAPG", "DRMA", "DSNG", "ASSA"],
+    "Djarum Group": ["DWIMURIA", "BANK CENTRAL ASIA", "BBCA", "TOWR", "BELI", "BLIBLI", "SUPR", "SMKL"],
+    "Hermanto Tanoko": ["TANCORP", "CLEO", "CAKK", "AVIA", "PEVE", "DEPO", "ZONE", "BLES", "WIFI", "CMNL"],
+    "Prajogo Pangestu": ["PRAJOGO PANGESTU", "BARITO PACIFIC", "BRPT", "TPIA", "BREN", "CUAN", "PTRO", "PETRINDO"],
+    "Happy Hapsoro": ["HAPSORO", "CBRE", "MINA", "RAJA", "SINI", "PSKT", "FORU", "WIFI"],
+    "Emtek Group": ["ELANG MAHKOTA", "EMTEK", "SCMA", "BUKA", "OMED"],
+    "Aguan / Sugianto Kusuma": ["SUGIANTO KUSUMA", "AGUAN", "PANI", "BSBK", "ASRI"],
+    "Arsjad Rasjid": ["ARSJAD RASJID", "INDY", "ROOK", "MBMA", "GOTO"],
+    "Astra Group": ["ASTRA INTERNATIONAL", "ASII", "UNTR", "AALI", "ASGR", "AUTO", "BNLI"],
+    "Chairul Tanjung": ["CHAIRUL TANJUNG", "CT CORP", "BANK MEGA", "MEGA", "TRANSMART"],
+    "Low Tuck Kwong": ["LOW TUCK KWONG", "BAYAN", "BYAN"],
+    "Rajawali Group": ["PETER SONDAKH", "RAJAWALI", "BWPT", "SMCB", "ARTO"]
 };
 
 export const corsHeaders = {
