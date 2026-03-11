@@ -572,19 +572,19 @@ export default function LandingPage() {
                                     borderBottom: '1px solid #f1f5f9',
                                     gap: '16px',
                                 }}>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: item.includes('BONUS') ? '#f59e0b' : '#64748b' }}>{item}</span>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: '#cbd5e1', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{price}</span>
+                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: item.includes('BONUS') ? '#f59e0b' : '#334155' }}>{item}</span>
+                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: '#94a3b8', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{price}</span>
                                 </div>
                             ))}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0 0', gap: '16px' }}>
-                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '15px', fontWeight: 700, color: '#475569' }}>Total Nilai</span>
-                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '18px', fontWeight: 800, color: '#cbd5e1', textDecoration: 'line-through' }}>Rp 1.147.000</span>
+                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Total Nilai</span>
+                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '18px', fontWeight: 800, color: '#94a3b8', textDecoration: 'line-through' }}>Rp 1.147.000</span>
                             </div>
                         </div>
 
                         {/* Price */}
                         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                            <div className="offer-price-old" style={{ marginBottom: '4px' }}>Nilai total Rp 1.147.000</div>
+                            <div className="offer-price-old" style={{ marginBottom: '4px', color: '#64748b' }}>Nilai total Rp 1.147.000</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <span className="offer-price-new" style={{ color: '#0f172a' }}>Rp 99.000</span>
                             </div>
