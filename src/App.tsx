@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './pages/Auth';
 import StockSheets from './pages/StockSheets';
 import LandingPage from './pages/LandingPage';
+import DemoDashboard from './pages/DemoDashboard';
 import { supabase } from './lib/supabase';
 
 function App() {
@@ -32,6 +33,9 @@ function App() {
                 
                 {/* Auth Page */}
                 <Route path="/auth" element={<Auth />} />
+
+                {/* Demo Page: Always accessible */}
+                <Route path="/demo" element={<DemoDashboard />} />
 
                 {/* Main Entry: Redirect to sheets if logged in, else LP */}
                 <Route path="/" element={session ? <Navigate to="/sheets" replace /> : <Navigate to="/lp" replace />} />
