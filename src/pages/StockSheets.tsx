@@ -11,6 +11,9 @@ import { supabase } from '../lib/supabase';
 
 import { allTickers } from '../data/allTickers';
 import { investorTab } from '../data/investorTab';
+import tickerDetailsRaw from '../data/tickerDetails.json';
+
+const tickerDetails = tickerDetailsRaw as Record<string, any>;
 
 type DrillItem = {
     type: 'ticker' | 'investor';
@@ -68,38 +71,36 @@ const StockSheets: React.FC = () => {
 
     // Local Search Helpers
     const getLocalTickerData = (ticker: string) => {
-        const stock = allTickers.find(s => s.ticker.toUpperCase() === ticker.toUpperCase());
-        if (!stock) return null;
-        return {
-            share_code: stock.ticker,
-            issuer_name: `${stock.ticker} - Indonesian Equity`,
-            holders: [
-                { 
-                    investor_name: stock.top_holder, 
-                    total_holding_shares: 0, 
-                    percentage: stock.top_pct, 
-                    date: 'Maret 2026' 
-                }
-            ]
-        };
+        const details = tickerDetails[ticker.toUpperCase()];
+        if (!details) return null;
+        return details;
     };
 
     const getLocalInvestorData = (name: string) => {
-        const investor = investorTab.find(i => i.investor.toUpperCase() === name.toUpperCase());
-        if (!investor) return null;
-        
-        // Find all tickers where this investor is the top holder
-        const relatedTickers = allTickers.filter(s => s.top_holder && s.top_holder.toUpperCase() === name.toUpperCase());
-        
+        const holdings: any[] = [];
+        let nationality = 'Unknown';
+
+        // Scan all tickers for this investor
+        Object.keys(tickerDetails).forEach(ticker => {
+            const data = tickerDetails[ticker];
+            const holder = data.holders?.find((h: any) => h.investor_name.toUpperCase() === name.toUpperCase());
+            if (holder) {
+                if (holder.nationality) nationality = holder.nationality;
+                holdings.push({
+                    share_code: ticker,
+                    total_holding_shares: holder.total_holding_shares,
+                    percentage: holder.percentage,
+                    date: holder.date || 'Maret 2026'
+                });
+            }
+        });
+
+        if (holdings.length === 0) return null;
+
         return {
-            investor_name: investor.investor,
-            nationality: investor.nat === 'L' ? 'Local' : 'Foreign',
-            holdings: relatedTickers.map(t => ({
-                share_code: t.ticker,
-                total_holding_shares: 0,
-                percentage: t.top_pct,
-                date: 'Maret 2026'
-            }))
+            investor_name: name,
+            nationality: nationality,
+            holdings: holdings
         };
     };
 
