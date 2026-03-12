@@ -25,6 +25,18 @@ const SahamPayment = () => {
     const priceIDR = 99000;
     const productName = "Universal Saham Ultimate";
 
+    // Track ViewContent on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+            console.log('📊 [FB Pixel] Tracking ViewContent for Saham Payment Page');
+            (window as any).fbq('track', 'ViewContent', {
+                content_name: productName,
+                value: priceIDR,
+                currency: 'IDR'
+            });
+        }
+    }, [productName, priceIDR]);
+
     const sendWAAlert = async (type: 'attempt' | 'success', details: any) => {
         try {
             const waToken = "EKOSp9NBSuNVVU";
@@ -84,6 +96,17 @@ const SahamPayment = () => {
             if (error) throw error;
 
             if (data?.success) {
+                // Track AddPaymentInfo when payment form is submitted and successfully generates an invoice
+                if (typeof window !== 'undefined' && (window as any).fbq) {
+                    console.log('📊 [FB Pixel] Tracking AddPaymentInfo');
+                    (window as any).fbq('track', 'AddPaymentInfo', {
+                        content_name: productName,
+                        value: priceIDR,
+                        currency: 'IDR',
+                        payment_type: paymentMethod
+                    });
+                }
+
                 setPaymentData(data);
                 setShowInstructions(true);
                 sendWAAlert('success', { ref: data.tripay_reference || 'N/A', name, phone: cleanPhone });
