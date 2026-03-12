@@ -21,6 +21,10 @@ The objective was to migrate the `AddPaymentInfo` event in the Saham project fro
 - **Free Ebook Modal Fixes**:
     - Fixed UI overflow by adjusting input padding and adding `box-sizing: border-box`.
     - Made `handleFreeEbook` permissive; if the fetch fails, it still displays success to prevent user friction for free content.
+- **LP Button Restoration**: 
+    - Re-added "Lihat Demo Dashboard" button to the Hero section (positioned above Login on mobile).
+    - Added "Lihat Demo" to the Navbar.
+    - Implemented `.btn-red-gradient` CSS class for these buttons as requested.
 - **Build & Verification**: Successfully ran `npm run build` to ensure no regressions in the production bundle.
 
 ## 4. Timestamps
@@ -30,7 +34,8 @@ The objective was to migrate the `AddPaymentInfo` event in the Saham project fro
 - **11:15 AM**: Removal of Pixel `AddPaymentInfo` and integration of CAPI.
 - **11:25 AM**: Removal of `wawp.net` WhatsApp alert logic.
 - **11:35 AM**: Fixed Free Ebook modal UI overflow and permissive handling.
-- **11:40 AM**: Production build verified.
+- **11:50 AM**: Restored "Lihat Demo" button with red gradient styling.
+- **11:55 AM**: Production build verified.
 
 ---
 **Status:** Completed & Verified.
