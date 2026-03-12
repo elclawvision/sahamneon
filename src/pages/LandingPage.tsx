@@ -341,6 +341,31 @@ export default function LandingPage() {
           box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
         }
 
+        .btn-red-gradient {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 16px 32px;
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: #fff !important;
+          border: none;
+          border-radius: var(--radius);
+          font-family: "Syne", sans-serif;
+          font-weight: 700;
+          font-size: 15px;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+          white-space: nowrap;
+          text-decoration: none;
+        }
+        .btn-red-gradient:hover { 
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+
         .glass-card {
           background: var(--surface);
           border: 1px solid var(--border);
@@ -514,6 +539,9 @@ export default function LandingPage() {
                     <span className="hide-mobile" style={{ fontSize: '13px', color: '#64748b', fontFamily: '"DM Sans", sans-serif' }}>
                         Data Real-Time KSEI • Maret 2026
                     </span>
+                    <button className="btn-red-gradient hide-mobile" style={{ padding: '10px 24px', fontSize: '14px' }} onClick={() => navigate('/demo')}>
+                        Lihat Demo
+                    </button>
                     <button className="btn-ghost hide-mobile" style={{ padding: '10px 24px', fontSize: '14px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
                         Login
                     </button>
@@ -582,6 +610,9 @@ export default function LandingPage() {
 
                     <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '400px' }}>
                         <div className="hide-desktop" style={{ width: '100%', marginBottom: '4px' }}>
+                            <button className="btn-red-gradient" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', marginBottom: '8px' }} onClick={() => navigate('/demo')}>
+                                Lihat Demo Dashboard
+                            </button>
                             <button className="btn-ghost" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
                                 Login Member
                             </button>
