@@ -24,6 +24,56 @@ const SahamPayment = () => {
 
     const priceIDR = 99000;
     const productName = "Universal Saham Ultimate";
+    const PIXEL_ID = "1941160619993263";
+    const CAPI_EDGE_FUNCTION_URL = 'https://nlrgdhpmsittuwiiindq.supabase.co/functions/v1/capi-universal';
+
+    // Helper to get cookies for CAPI
+    const getFbcFbpCookies = () => {
+        const cookies = document.cookie.split(';').reduce((acc: any, cookie) => {
+            const [name, value] = cookie.trim().split('=');
+            acc[name] = value;
+            return acc;
+        }, {});
+        return {
+            fbc: cookies._fbc || null,
+            fbp: cookies._fbp || null
+        };
+    };
+
+    // Helper to send CAPI events
+    const sendCAPIEvent = async (eventName: string, userData: any = {}, customData: any = {}) => {
+        const { fbc, fbp } = getFbcFbpCookies();
+        try {
+            const payload = {
+                pixelId: PIXEL_ID,
+                eventName: eventName,
+                eventSourceUrl: window.location.href,
+                userData: {
+                    em: userData.email || null,
+                    ph: userData.phone || null,
+                    fn: userData.name ? userData.name.split(' ')[0] : null,
+                    ln: userData.name ? userData.name.split(' ').slice(1).join(' ') : null,
+                    fbc: fbc,
+                    fbp: fbp,
+                },
+                customData: {
+                    content_name: productName,
+                    value: priceIDR,
+                    currency: 'IDR',
+                    ...customData
+                }
+            };
+
+            console.log(`📤 Sending CAPI Event: ${eventName}`, payload);
+            await fetch(CAPI_EDGE_FUNCTION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error(`❌ Failed to send CAPI event (${eventName}):`, error);
+        }
+    };
 
     // Track ViewContent on mount
     useEffect(() => {
@@ -96,16 +146,8 @@ const SahamPayment = () => {
             if (error) throw error;
 
             if (data?.success) {
-                // Track AddPaymentInfo when payment form is submitted and successfully generates an invoice
-                if (typeof window !== 'undefined' && (window as any).fbq) {
-                    console.log('📊 [FB Pixel] Tracking AddPaymentInfo');
-                    (window as any).fbq('track', 'AddPaymentInfo', {
-                        content_name: productName,
-                        value: priceIDR,
-                        currency: 'IDR',
-                        payment_type: paymentMethod
-                    });
-                }
+                // Track AddPaymentInfo via CAPI only
+                await sendCAPIEvent('AddPaymentInfo', { name, email, phone: cleanPhone }, { payment_type: paymentMethod });
 
                 setPaymentData(data);
                 setShowInstructions(true);

@@ -260,9 +260,14 @@ export default function ReviewPage() {
                     border-radius: 12px;
                     cursor: pointer;
                 }
+                @media (max-width: 640px) {
+                    .review-container { padding: 1rem 0.5rem; }
+                    .review-card { padding: 1.5rem 1rem; border-radius: 12px; }
+                    .header h1 { font-size: 1.5rem; }
+                }
             `}</style>
 
-            <div style={{ width: '100%', maxWidth: '500px' }}>
+            <div style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column' }}>
                 <button onClick={() => navigate('/lp')} className="nav-back">
                     <ArrowLeft size={20} /> Kembali ke Landing Page
                 </button>
