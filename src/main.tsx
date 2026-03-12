@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 
-const APP_VERSION = '2026.03.12.22'; // <-- Change this to force cache clear
+const APP_VERSION = '2026.03.12.23'; // <-- Change this to force cache clear
 
 if (typeof window !== 'undefined' && localStorage.getItem('v_cache') !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
