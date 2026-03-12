@@ -63,6 +63,34 @@ const FAQS = [
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+const PIXEL_ID = '1941160619993263';
+
+const sha256 = async (message: string): Promise<string> => {
+    if (!message) return "";
+    const msgBuffer = new TextEncoder().encode(message.trim().toLowerCase());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+const getFbcFbpCookies = (): { fbc: string | null; fbp: string | null } => {
+    if (typeof document === 'undefined') return { fbc: null, fbp: null };
+    const cookies = document.cookie.split('; ');
+    const fbc = cookies.find(c => c.startsWith('_fbc='))?.split('=')[1] || null;
+    const fbp = cookies.find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
+    return { fbc, fbp };
+};
+
+const getClientIp = async (): Promise<string | null> => {
+    try {
+        const response = await fetch('https://api64.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (e) {
+        return null;
+    }
+};
+
 const StarRating = ({ rating }: { rating: number }) => (
     <div style={{ display: 'flex', gap: '2px' }}>
         {[1, 2, 3, 4, 5].map(i => (
@@ -150,23 +178,65 @@ export default function LandingPage() {
     const handleFreeEbook = async (e: React.FormEvent) => {
         e.preventDefault();
         setFreeEbookStatus({ loading: true, success: false, error: null });
+
+        let formattedWa = formData.phone.trim().replace(/\D/g, '');
+        // Default to Indonesian formatting if it looks like one
+        if (formattedWa.startsWith('0')) {
+            formattedWa = '62' + formattedWa.slice(1);
+        } else if (!formattedWa.startsWith('62') && formattedWa.length >= 9) {
+            formattedWa = '62' + formattedWa;
+        }
+
         try {
-            await fetch('https://elvisiongroup.supabase.co/functions/v1/send-ebooks-free', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: formData.email,
-                    userName: formData.name,
-                    phone: formData.phone,
-                    lang: 'saham'
-                })
+            const payload = {
+                userEmail: formData.email,
+                userName: formData.name,
+                phone: formattedWa,
+                id: 'saham'
+            };
+
+            const { data, error } = await supabase.functions.invoke('send-ebooks-free', {
+                body: payload
             });
-            // Biarkan saja walaupun gagal fetch (mungkin karena CORS atau network), 
-            // karena ini gratisan, tampilkan success saja agar user senang.
-            setFreeEbookStatus({ loading: false, success: true, error: null });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                setFreeEbookStatus({ loading: false, success: true, error: null });
+
+                // 📊 CAPI: Fire custom "FreeEbook" event to Meta
+                try {
+                    const { fbc, fbp } = getFbcFbpCookies();
+                    const clientIp = await getClientIp();
+                    await supabase.functions.invoke('capi-universal', {
+                        body: {
+                            pixelId: PIXEL_ID,
+                            eventName: 'FreeEbook',
+                            eventSourceUrl: window.location.href,
+                            customData: {
+                                content_name: 'Free Ebook Saham Ultimate',
+                                value: 0,
+                                currency: 'IDR'
+                            },
+                            userData: {
+                                fbc, fbp,
+                                client_ip_address: clientIp,
+                                fn: await sha256(formData.name),
+                                ph: await sha256(formattedWa),
+                                em: await sha256(formData.email)
+                            }
+                        }
+                    });
+                    console.log('✅ CAPI FreeEbook event sent');
+                } catch (capiErr) {
+                    console.error('⚠️ CAPI FreeEbook error (non-fatal):', capiErr);
+                }
+            } else {
+                setFreeEbookStatus({ loading: false, success: false, error: data?.error || 'Gagal mengirim WhatsApp. Silahkan coba lagi nanti.' });
+            }
         } catch (err: any) {
             console.error('Free Ebook fetch error:', err);
-            // Tetap success karena gratisan
+            // Tetap success karena gratisan agar user senang, tapi log error
             setFreeEbookStatus({ loading: false, success: true, error: null });
         }
     };
