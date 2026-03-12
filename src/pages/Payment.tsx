@@ -87,28 +87,6 @@ const SahamPayment = () => {
         }
     }, [productName, priceIDR]);
 
-    const sendWAAlert = async (type: 'attempt' | 'success', details: any) => {
-        try {
-            const waToken = "EKOSp9NBSuNVVU";
-            const waInstanceId = "BDD9F9320ECD"; 
-            const msg = type === 'attempt'
-                ? `🔔 *Mencoba Checkout SAHAM*\nProduk: ${productName}\nNama: ${details.name}\nWA: ${details.phone}\nMetode: ${details.method}`
-                : `✅ *Checkout SAHAM Sukses*\nRef: ${details.ref}\nNama: ${details.name}\nWA: ${details.phone}\nTotal: Rp${priceIDR.toLocaleString('id-ID')}`;
-
-            const cleanTarget = "62895325633487";
-            const params = new URLSearchParams({
-                instance_id: waInstanceId,
-                access_token: waToken,
-                chatId: cleanTarget + "@c.us",
-                message: msg
-            });
-
-            await fetch(`https://wawp.net/wp-json/awp/v1/send?${params.toString()}`, {
-                method: 'POST'
-            });
-        } catch (e) { console.error('WA API Error', e); }
-    };
-
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || !phone || !email || !purchasePassword) {
@@ -124,8 +102,6 @@ const SahamPayment = () => {
         } else if (!cleanPhone.startsWith('62')) {
             cleanPhone = '62' + cleanPhone;
         }
-
-        sendWAAlert('attempt', { name, phone: cleanPhone, method: paymentMethod });
 
         const payload = {
             subscriptionType: 'universal',
@@ -151,7 +127,6 @@ const SahamPayment = () => {
 
                 setPaymentData(data);
                 setShowInstructions(true);
-                sendWAAlert('success', { ref: data.tripay_reference || 'N/A', name, phone: cleanPhone });
             } else {
                 toast.error(data?.error || "Gagal membuat pembayaran.");
             }

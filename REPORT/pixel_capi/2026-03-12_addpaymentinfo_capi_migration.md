@@ -17,6 +17,7 @@ The objective was to migrate the `AddPaymentInfo` event in the Saham project fro
     - Removed the existing Meta Pixel `fbq('track', 'AddPaymentInfo', ...)` code.
     - Replaced it with an asynchronous call to `sendCAPIEvent('AddPaymentInfo', ...)` inside the `handleCheckout` function.
 - **Edge Function URL**: Used the universal endpoint: `https://nlrgdhpmsittuwiiindq.supabase.co/functions/v1/capi-universal`.
+- **Removal of WA Alerts**: Deleted the `sendWAAlert` function and all its calls in `Payment.tsx` as it was no longer required.
 - **Build & Verification**: Successfully ran `npm run build` to ensure no regressions in the production bundle.
 
 ## 4. Timestamps
@@ -24,7 +25,8 @@ The objective was to migrate the `AddPaymentInfo` event in the Saham project fro
 - **11:00 AM**: Retrieval of CAPI pattern from the `elvisiongroup` reference.
 - **11:10 AM**: Implementation of `sendCAPIEvent` and `getFbcFbpCookies`.
 - **11:15 AM**: Removal of Pixel `AddPaymentInfo` and integration of CAPI.
-- **11:20 AM**: Production build verified.
+- **11:25 AM**: Removal of `wawp.net` WhatsApp alert logic.
+- **11:30 AM**: Production build verified.
 
 ---
 **Status:** Completed & Verified.
