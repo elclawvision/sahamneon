@@ -45,7 +45,7 @@ export default function Auth() {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email.trim().toLowerCase(),
-                password: pass.trim().toLowerCase(),
+                password: pass,
             });
             if (error) throw error;
 
@@ -138,6 +138,9 @@ export default function Auth() {
     return (
         <div className="auth-container">
             <style>{`
+                .auth-container, .auth-container * {
+                    box-sizing: border-box;
+                }
                 .auth-container {
                     --bg-page: #f8fafc;
                     --bg-card: #ffffff;

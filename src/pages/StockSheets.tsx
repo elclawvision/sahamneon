@@ -471,7 +471,7 @@ const StockSheets: React.FC = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {currentDrill.data.holders.map((h: any, i: number) => (
+                                                    {currentDrill.data?.holders?.map((h: any, i: number) => (
                                                         <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                                                             <td style={{ padding: '12px', fontWeight: 600 }}>
                                                                 <button 
@@ -481,8 +481,8 @@ const StockSheets: React.FC = () => {
                                                                     {h.investor_name}
                                                                 </button>
                                                             </td>
-                                                            <td style={{ padding: '12px' }}>{h.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{h.percentage.toFixed(2)}%</td>
+                                                            <td style={{ padding: '12px' }}>{h.total_holding_shares?.toLocaleString() || '-'}</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{h.percentage?.toFixed(2) || '0.00'}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -500,9 +500,9 @@ const StockSheets: React.FC = () => {
                                         <>
                                             <div style={{ background: 'var(--tab-bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                                                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Investor Name</div>
-                                                <div style={{ fontSize: '18px', fontWeight: 700 }}>{currentDrill.data.investor_name}</div>
+                                                <div style={{ fontSize: '18px', fontWeight: 700 }}>{currentDrill.data?.investor_name || currentDrill.id}</div>
                                                 <div style={{ fontSize: '14px', color: 'var(--accent)', marginTop: '4px' }}>
-                                                    {currentDrill.data.nationality} | {currentDrill.data.holdings.length} Total Positions
+                                                    {currentDrill.data?.nationality || 'ID'} | {currentDrill.data?.holdings?.length || 0} Total Positions
                                                 </div>
                                             </div>
 
@@ -515,7 +515,7 @@ const StockSheets: React.FC = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {currentDrill.data.holdings.map((p: any, i: number) => (
+                                                    {currentDrill.data?.holdings?.map((p: any, i: number) => (
                                                         <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                             <td style={{ padding: '12px', fontWeight: 600 }}>
                                                                 <button 
@@ -525,8 +525,8 @@ const StockSheets: React.FC = () => {
                                                                     {p.share_code}
                                                                 </button>
                                                             </td>
-                                                            <td style={{ padding: '12px' }}>{p.total_holding_shares.toLocaleString()}</td>
-                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{p.percentage.toFixed(2)}%</td>
+                                                            <td style={{ padding: '12px' }}>{p.total_holding_shares?.toLocaleString() || '-'}</td>
+                                                            <td style={{ padding: '12px', color: '#60a5fa', fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap' }}>{p.percentage?.toFixed(2) || '0.00'}%</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
