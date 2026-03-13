@@ -348,7 +348,16 @@ const StockSheets: React.FC = () => {
                                         <>
                                             <span style={{ color: 'var(--text-secondary)' }}>{currentDrill.type === 'ticker' ? 'Ticker:' : 'Investor:'}</span> {currentDrill.id}
                                         </>
-                                    ) : activeTab === 'tickers' ? (tickerSubTab === 'all' ? 'Tickers: General List' : 'Tickers: Free Float Scanner') : tabs.find(t => t.id === activeTab)?.label}
+                                    ) : activeTab === 'tickers' ? (
+                                        tickerSubTab === 'all' ? 'Tickers: General List' : 'Tickers: Free Float Scanner'
+                                    ) : activeTab === 'investor' ? (
+                                        'Investor Tab'
+                                    ) : activeTab === 'conglomerate' ? (
+                                        selectedConglo ? `Conglomerates - ${selectedConglo.toUpperCase()}` : 'Conglomerates'
+                                    ) : activeTab === 'celebrities' ? (
+                                        celebSubTab === 'public' ? (selectedPublic ? `Public Figures - ${selectedPublic.toUpperCase()}` : 'Finance Celebrities') :
+                                        celebSubTab === 'hot' ? (selectedHot ? `Hot Searches - ${selectedHot.toUpperCase()}` : 'Hot Searches') : 'Finance Celebrities'
+                                    ) : tabs.find(t => t.id === activeTab)?.label}
                                     <span style={{ fontSize: '10px', background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, marginLeft: '4px' }}>Version Maret 2026</span>
                                 </h2>
                                 {drillStack.length > 1 && (

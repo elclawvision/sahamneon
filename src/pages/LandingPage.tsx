@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ShieldCheck, Zap, TrendingUp, BarChart3, Users, Clock, ArrowRight, CheckCircle2, Menu, X, Rocket, GraduationCap, ChevronRight, MessageSquare, Shield, Lock, Layout, PlayCircle, Eye, EyeOff, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import DemoDashboard from './DemoDashboard';
 
 // ── TYPES & MOCK DATA ────────────────────────────────────────────────────────────────────
 interface ReviewItem {
@@ -113,6 +114,11 @@ const useInView = (threshold = 0.15) => {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 const scrollToCheckout = () => {
     const el = document.getElementById('checkout-form');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+const scrollToDemo = () => {
+    const el = document.getElementById('demo-section');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
@@ -641,7 +647,7 @@ export default function LandingPage() {
                     <span className="hide-mobile" style={{ fontSize: '13px', color: '#64748b', fontFamily: '"Inter", sans-serif' }}>
                         Data Real-Time KSEI • Maret 2026
                     </span>
-                    <button className="btn-red-gradient hide-mobile" style={{ padding: '10px 24px', fontSize: '14px' }} onClick={() => navigate('/demo')}>
+                    <button className="btn-red-gradient hide-mobile" style={{ padding: '10px 24px', fontSize: '14px' }} onClick={scrollToDemo}>
                         Lihat Demo
                     </button>
                     <button className="btn-ghost hide-mobile" style={{ padding: '10px 24px', fontSize: '14px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
@@ -712,7 +718,7 @@ export default function LandingPage() {
 
                     <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '400px' }}>
                         <div className="hide-desktop" style={{ width: '100%', marginBottom: '4px' }}>
-                            <button className="btn-red-gradient" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', marginBottom: '8px' }} onClick={() => navigate('/demo')}>
+                            <button className="btn-red-gradient" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', marginBottom: '8px' }} onClick={scrollToDemo}>
                                 Lihat Demo Dashboard
                             </button>
                             <button className="btn-ghost" style={{ width: '100%', padding: '18px 36px', fontSize: '16px', fontWeight: 800, color: '#3b82f6', borderColor: '#3b82f6' }} onClick={() => navigate('/auth')}>
@@ -738,6 +744,29 @@ export default function LandingPage() {
                     </p>
                 </div>
             </header>
+
+            {/* ── DEMO DASHBOARD SECTION ── */}
+            <section id="demo-section" style={{ padding: '0 6% 80px', background: '#f8fafc' }}>
+                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                    <div className="section-eyebrow">Demo App</div>
+                    <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
+                        Coba Langsung <span className="gradient-text">Saham Ultimate</span>
+                    </h2>
+                    <p style={{ color: '#64748b', maxWidth: '600px', margin: '0 auto', fontSize: '15px' }}>
+                        Jelajahi data whale, konglomerat, dan public figures. Beberapa data disamarkan dalam mode demo ini.
+                    </p>
+                </div>
+                <div style={{ 
+                    maxHeight: '800px', 
+                    overflowY: 'auto', 
+                    borderRadius: '24px', 
+                    border: '1px solid var(--border)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                    background: '#fff'
+                }}>
+                    <DemoDashboard />
+                </div>
+            </section>
 
             {/* ── STATS STRIP ── */}
             <div style={{ padding: '0 6% 60px' }}>
