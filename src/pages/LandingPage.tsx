@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star, ShieldCheck, Zap, TrendingUp, BarChart3, Users, Clock, ArrowRight, CheckCircle2, Menu, X, Rocket, GraduationCap, ChevronRight, MessageSquare, Shield, Lock, Layout, PlayCircle } from 'lucide-react';
+import { Star, ShieldCheck, Zap, TrendingUp, BarChart3, Users, Clock, ArrowRight, CheckCircle2, Menu, X, Rocket, GraduationCap, ChevronRight, MessageSquare, Shield, Lock, Layout, PlayCircle, Eye, EyeOff, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // ── TYPES & MOCK DATA ────────────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ interface ReviewItem {
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const REVIEWS: ReviewItem[] = [
-    { id: 1, email: 'bud***@gmail.com', rating: 5, date: '2 Mar 2026', text: 'Gila sih ini. Baru 2 hari pakai udah nemu saham yang Lo Kheng Hong baru masuk, holders count turun 8% dalam sebulan. Entry di 340, sekarang udah 410. Worth it banget buat 99rb.', verified: true },
+    { id: 1, email: 'bud***@gmail.com', rating: 5, date: '2 Mar 2026', text: 'Gila sih ini. Baru 2 hari pakai udah nemu saham yang Lo Kheng Hong baru masuk, holders count turun 8% dalam sebulan. Entry di 340, sekarang udah 410. Worth it banget buat 199rb.', verified: true },
     { id: 2, email: 'ren***@yahoo.com', rating: 5, date: '28 Feb 2026', text: 'Data foreign flow-nya akurat banget. Saya compare sama aplikasi lain yang saya bayar 500rb/bulan — Saham Ultimate Real-Time KSEI jauh lebih clean dan mudah dibaca. Langsung pindah ke sini.', verified: true },
     { id: 3, email: 'senaditsr***@hotmail.com', rating: 5, date: '25 Feb 2026', text: 'CSV export-nya the real MVP. Langsung saya masukkan ke Google Sheets dan bikin dashboard sendiri. Bonus tutorialnya juga sangat membantu untuk pemula seperti saya.', verified: true },
     { id: 4, email: 'andhy***@gmail.com', rating: 5, date: '22 Feb 2026', text: 'Tab Public Figures itu yang paling keren menurut saya. Bisa lihat portfolio politisi aktif dan mantan pejabat. Informasi ini yang biasanya cuma dimiliki orang dalam.', verified: true },
@@ -29,12 +29,12 @@ const REVIEWS: ReviewItem[] = [
 
 const FAQS = [
     {
-        q: 'Apa yang saya dapatkan setelah bayar Rp 99.000?',
-        a: 'Akses penuh ke platform Saham Ultimate (data whale Real-Time KSEI, konglomerat, public figures, hot searches, free float screener + CSV download) DAN 3 bonus PDF eksklusif: Cheat Sheet 5 Tanda Whale Sudah Masuk (47 hal), Tutorial Deteksi Gorengan via Free Float (37 hal), dan Watchlist Konglomerat Indonesia 2025 (33 hal). Total nilai setara > Rp 1.147.000, kamu bayar Rp 99.000. Sekali bayar, akses langsung.'
+        q: 'Apa yang saya dapatkan setelah bayar Rp 199.000?',
+        a: 'Akses penuh ke platform Saham Ultimate (data whale Real-Time KSEI, konglomerat, public figures, hot searches, free float screener + CSV download) DAN 3 bonus PDF eksklusif: Cheat Sheet 5 Tanda Whale Sudah Masuk (47 hal), Tutorial Deteksi Gorengan via Free Float (37 hal), dan Watchlist Konglomerat Indonesia 2025 (33 hal). Total nilai setara > Rp 1.149.000, kamu bayar Rp 199.000. Sekali bayar, akses langsung.'
     },
     {
         q: 'Apakah ini berlangganan atau sekali bayar?',
-        a: 'Ini adalah pembelian SEKALI BAYAR. Tidak ada biaya berulang, tidak ada hidden subscription, tidak ada auto-renewal. Bayar Rp 99.000, akses langsung dan selamanya untuk versi yang sudah dibeli.'
+        a: 'Ini adalah pembelian SEKALI BAYAR. Tidak ada biaya berulang, tidak ada hidden subscription, tidak ada auto-renewal. Bayar Rp 199.000, akses langsung dan selamanya untuk versi yang sudah dibeli.'
     },
     {
         q: 'Seberapa sering data diupdate?',
@@ -58,7 +58,7 @@ const FAQS = [
     },
     {
         q: 'Apakah ada garansi uang kembali?',
-        a: 'Karena ini adalah produk digital yang langsung dapat diakses setelah pembayaran, kami tidak menyediakan garansi refund standar. Namun jika ada masalah teknis yang mencegah kamu mengakses produk, tim support kami akan menyelesaikannya dalam 24 jam atau memberikan kompensasi yang setara.'
+        a: 'Ya, kami berikan garansi refund 100% langsung tanpa banyak tanya. Jika dalam 24 jam pertama kamu merasa data yang kami berikan tidak akurat atau tidak bermanfaat, cukup hubungi support dan kami kembalikan uangmu.'
     },
 ];
 
@@ -111,11 +111,20 @@ const useInView = (threshold = 0.15) => {
 };
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+const scrollToCheckout = () => {
+    const el = document.getElementById('checkout-form');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+const scrollToEbook = () => {
+    const el = document.getElementById('free-ebook-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
 export default function LandingPage() {
     const navigate = useNavigate();
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [reviewPage, setReviewPage] = useState(0);
-    const [freeEbookModal, setFreeEbookModal] = useState(false);
     const [freeEbookStatus, setFreeEbookStatus] = useState<{ loading: boolean; success: boolean; error: string | null }>({
         loading: false,
         success: false,
@@ -125,13 +134,106 @@ export default function LandingPage() {
     const [countdown, setCountdown] = useState('06:00:00');
     const [dbReviews, setDbReviews] = useState<any[]>([]);
 
+    // ── PAYMENT FORM STATE ──────────────────────────────────────────────────────
+    const [payName, setPayName] = useState('');
+    const [payPhone, setPayPhone] = useState('');
+    const [payEmail, setPayEmail] = useState('');
+    const [payPassword, setPayPassword] = useState('');
+    const [showPayPassword, setShowPayPassword] = useState(false);
+    const [payMethod, setPayMethod] = useState('QRIS');
+    const [payLoading, setPayLoading] = useState(false);
+    const [payInstructions, setPayInstructions] = useState(false);
+    const [payData, setPayData] = useState<any>(null);
+
+    const PIXEL_ID = '1941160619993263';
+    const priceIDR = 199000;
+    const productName = 'Universal Saham Ultimate';
+
+    const handleCheckout = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!payName || !payPhone || !payEmail || !payPassword) {
+            alert('Mohon lengkapi semua data!'); return;
+        }
+        if (payPassword.length < 6) { alert('Password minimal 6 karakter!'); return; }
+        setPayLoading(true);
+
+        let cleanPhone = payPhone.trim().replace(/\D/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.slice(1);
+        else if (!cleanPhone.startsWith('62')) cleanPhone = '62' + cleanPhone;
+
+        const { fbc, fbp } = getFbcFbpCookies();
+        const clientIp = await getClientIp().catch(() => null);
+
+        try {
+            await supabase.functions.invoke('capi-universal', {
+                body: {
+                    pixelId: PIXEL_ID, eventName: 'AddPaymentInfo', eventSourceUrl: window.location.href,
+                    customData: { content_name: productName, value: priceIDR, currency: 'IDR' },
+                    userData: { fbc, fbp, client_ip_address: clientIp, fn: await sha256(payName), ph: await sha256(cleanPhone), em: await sha256(payEmail) }
+                }
+            });
+        } catch (e) { console.error('CAPI AddPaymentInfo error', e); }
+
+        try {
+            const { data, error } = await supabase.functions.invoke('tripay-create-payment', {
+                body: {
+                    subscriptionType: 'universal', paymentMethod: payMethod,
+                    userName: payName, userEmail: payEmail.trim().toLowerCase(), phoneNumber: cleanPhone,
+                    address: 'Digital', amount: priceIDR, currency: 'IDR', quantity: 1,
+                    productName, fbc, fbp, clientIp, purchasePassword: payPassword.trim().toLowerCase()
+                }
+            });
+            if (error) throw error;
+            if (data?.success) {
+                setPayData(data);
+                setPayInstructions(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert(data?.error || 'Gagal membuat pembayaran. Hubungi admin.');
+            }
+        } catch (err: any) {
+            alert(`Error: ${err?.message || 'Unknown error'}. Silahkan hubungi admin via WhatsApp.`);
+        } finally { setPayLoading(false); }
+    };
+
+    useEffect(() => {
+        if (!payInstructions || !payData) return;
+        const tripayRef = payData.tripay_reference || payData.reference;
+        if (!tripayRef) return;
+        const channelName = `payment-status-saham-${tripayRef}`;
+        const channel = supabase.channel(channelName)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'global_product', filter: `tripay_reference=eq.${tripayRef}` },
+                (payload: any) => {
+                    if (payload.new?.status === 'PAID') {
+                        supabase.removeChannel(channel);
+                        const modal = document.createElement('div');
+                        modal.innerHTML = `<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(8px)"><div style="background:linear-gradient(135deg,#0A0612,#13141c);padding:50px;border-radius:25px;text-align:center;max-width:90%;box-shadow:0 25px 80px rgba(59,130,246,0.3);border:2px solid rgba(59,130,246,0.3)"><div style="font-size:5rem;margin-bottom:25px">🎉</div><h2 style="font-size:2.5rem;background:linear-gradient(45deg,#3b82f6,#60a5fa,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;font-weight:bold">Pembayaran Berhasil!</h2><p style="font-size:1.4rem;color:#e2e8f0;margin-bottom:25px">Akses Saham Ultimate Anda telah aktif.</p><button id="sahamLoginBtn" style="background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border:none;padding:15px 30px;border-radius:12px;font-size:1.2rem;font-weight:bold;cursor:pointer;margin-bottom:20px">Masuk Dashboard</button><p style="color:#94a3b8;font-size:1rem">Otomatis dialihkan dalam <span id="sahamCountdown" style="color:#60a5fa;font-weight:bold">5</span> detik</p></div></div>`;
+                        document.body.appendChild(modal);
+                        const btn = document.getElementById('sahamLoginBtn');
+                        if (btn) btn.onclick = () => { document.body.removeChild(modal); navigate('/auth'); };
+                        let t = 5;
+                        const int = setInterval(() => { t--; const el = document.getElementById('sahamCountdown'); if (el) el.innerText = String(t); if (t <= 0) { clearInterval(int); if (document.body.contains(modal)) { document.body.removeChild(modal); navigate('/auth'); } } }, 1000);
+                    }
+                }
+            ).subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [payInstructions, payData, navigate]);
+
     useEffect(() => {
         const fetchReviews = async () => {
-            const { data } = await supabase
-                .from('saham_reviews')
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (data) setDbReviews(data);
+            try {
+                const { data, error } = await supabase
+                    .from('saham_reviews')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (error) {
+                    console.log('💡 Note: Saham reviews table might be initializing.');
+                    return;
+                }
+                if (data) setDbReviews(data);
+            } catch (e) {
+                // Silently fail to avoid console noise for missing table
+            }
         };
         fetchReviews();
     }, []);
@@ -246,11 +348,11 @@ export default function LandingPage() {
             minHeight: '100vh',
             background: '#f8fafc',
             color: '#1e293b',
-            fontFamily: '"Syne", system-ui, sans-serif',
+            fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
             overflowX: 'hidden',
         }}>
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -305,7 +407,7 @@ export default function LandingPage() {
           color: #fff;
           border: none;
           border-radius: var(--radius);
-          font-family: "Syne", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-weight: 700;
           font-size: 15px;
           cursor: pointer;
@@ -327,7 +429,7 @@ export default function LandingPage() {
           color: #fff;
           border: none;
           border-radius: var(--radius);
-          font-family: "Syne", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-weight: 700;
           font-size: 15px;
           cursor: pointer;
@@ -351,7 +453,7 @@ export default function LandingPage() {
           color: #fff !important;
           border: none;
           border-radius: var(--radius);
-          font-family: "Syne", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-weight: 700;
           font-size: 15px;
           cursor: pointer;
@@ -384,7 +486,7 @@ export default function LandingPage() {
           gap: 6px;
           padding: 6px 14px;
           border-radius: 999px;
-          font-family: "DM Sans", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-size: 12px;
           font-weight: 600;
           letter-spacing: 0.3px;
@@ -397,7 +499,7 @@ export default function LandingPage() {
           align-items: center;
           gap: 12px;
           padding: 0 32px;
-          font-family: "DM Sans", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-size: 13px;
           color: #475569;
           font-weight: 500;
@@ -405,7 +507,7 @@ export default function LandingPage() {
         .ticker-item span { color: var(--blue); font-weight: 700; }
 
         .offer-price-old {
-          font-family: "DM Sans", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-size: 18px;
           color: #475569;
           text-decoration: line-through;
@@ -457,7 +559,7 @@ export default function LandingPage() {
         }
         .faq-q:hover { color: #0f172a; }
         .faq-a {
-          font-family: "DM Sans", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-size: 14px;
           color: #94a3b8;
           line-height: 1.75;
@@ -479,7 +581,7 @@ export default function LandingPage() {
         .integrity-row:last-child { border-bottom: none; }
 
         .section-eyebrow {
-          font-family: "DM Sans", sans-serif;
+          font-family: "Inter", -apple-system, sans-serif;
           font-size: 11px;
           font-weight: 700;
           letter-spacing: 2.5px;
@@ -536,7 +638,7 @@ export default function LandingPage() {
                     SAHAM<span className="gradient-text">ULTIMATE</span>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <span className="hide-mobile" style={{ fontSize: '13px', color: '#64748b', fontFamily: '"DM Sans", sans-serif' }}>
+                    <span className="hide-mobile" style={{ fontSize: '13px', color: '#64748b', fontFamily: '"Inter", sans-serif' }}>
                         Data Real-Time KSEI • Maret 2026
                     </span>
                     <button className="btn-red-gradient hide-mobile" style={{ padding: '10px 24px', fontSize: '14px' }} onClick={() => navigate('/demo')}>
@@ -598,7 +700,7 @@ export default function LandingPage() {
                     </h1>
 
                     <p style={{
-                        fontFamily: '"DM Sans", sans-serif',
+                        fontFamily: '"Inter", sans-serif',
                         fontSize: 'clamp(15px, 2vw, 18px)',
                         color: '#64748b',
                         maxWidth: '560px',
@@ -617,21 +719,21 @@ export default function LandingPage() {
                                 Login Member
                             </button>
                         </div>
-                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={() => navigate('/payment')}>
-                            Akses Sekarang — Rp 99.000
+                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={scrollToCheckout}>
+                            Akses Sekarang — Rp 199.000
                         </button>
-                        <button className="btn-green-gradient" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={() => setFreeEbookModal(true)}>
+                        <button className="btn-green-gradient" style={{ fontSize: '16px', padding: '18px 36px', flex: 1 }} onClick={scrollToEbook}>
                             🎁 Ebook Gratis →
                         </button>
                     </div>
 
                     <div style={{ marginTop: '24px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '12px 24px', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                         <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '14px', letterSpacing: '0.05em' }}>🔥 FLASH SALE: <span style={{ fontFamily: 'monospace', fontSize: '18px' }}>{countdown}</span></span>
-                        <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '13px' }}>Promo Ini hanya berlaku hari ini!</span>
-                        <span style={{ color: '#ef4444', fontWeight: 500, fontSize: '12px', opacity: 0.9 }}>Harga Akan naik ke 249.000 Setelah jam ini habis</span>
+                        <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '13px' }}>Kesempatan terbatas untuk akses data premium dengan harga mahasiswa.</span>
+                        <span style={{ color: '#ef4444', fontWeight: 500, fontSize: '12px', opacity: 0.9 }}>Hemat lebih dari Rp 900.000 dari nilai total hari ini!</span>
                     </div>
 
-                    <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
+                    <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
                         Sekali bayar • Tanpa berlangganan • Langsung akses + 3 Bonus PDF
                     </p>
                 </div>
@@ -649,11 +751,77 @@ export default function LandingPage() {
                     ].map(([num, label]) => (
                         <div key={label} style={{ background: '#fff', padding: '28px 20px', textAlign: 'center' }}>
                             <div style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: '#0f172a', marginBottom: '4px', letterSpacing: '0', lineHeight: 1.2 }}>{num}</div>
-                            <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{label}</div>
+                            <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{label}</div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            {/* ── FREE EBOOK SECTION ── */}
+            <section id="free-ebook-section" style={{ padding: '0 6% 80px' }}>
+                <div style={{
+                    background: '#0d1422',
+                    border: '1px solid rgba(139,92,246,0.2)',
+                    borderRadius: '24px',
+                    padding: 'clamp(28px, 6vw, 48px)',
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: '40px',
+                    alignItems: 'center'
+                }}>
+                    <div>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎁</div>
+                        <h3 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', marginBottom: '12px', letterSpacing: '-0.5px' }}>Dapatkan Ebook Gratis</h3>
+                        <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '15px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '24px' }}>
+                            Kuasai strategi mendeteksi akumulasi Whale & cara menghindari saham Low-Float berbahaya sebelum terlambat.
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {['Strategi Deteksi Akumulasi Whale', 'Hindari Saham Low-Float', 'Real-Time KSEI Guide'].map(point => (
+                                <div key={point} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '14px' }}>
+                                    <CheckCircle2 size={16} color="#22c55e" />
+                                    <span>{point}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '32px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        {freeEbookStatus.success ? (
+                            <div style={{ textAlign: 'center', padding: '20px' }}>
+                                <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                                <h4 style={{ color: '#fff', fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>Berhasil Dikirim!</h4>
+                                <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6 }}>Silahkan Periksa <strong>WhatsApp</strong> anda. Ketik <strong>Ya</strong> jika anda ingin menerima Free ebook..</p>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleFreeEbook} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', letterSpacing: '0.05em' }}>NAMA LENGKAP</label>
+                                    <input required type="text" placeholder="Nama Kamu" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box' }} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', letterSpacing: '0.05em' }}>NOMOR WHATSAPP</label>
+                                    <div style={{ display: 'flex', width: '100%' }}>
+                                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRight: 'none', borderRadius: '12px 0 0 12px', padding: '0 14px', fontSize: '15px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center' }}>🇮🇩 +62</div>
+                                        <input required type="tel" placeholder="812345678" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0 12px 12px 0', padding: '14px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box' }} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc', letterSpacing: '0.05em' }}>EMAIL AKTIF</label>
+                                    <input required type="email" placeholder="Email Aktif" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', fontSize: '15px', outline: 'none', width: '100%', boxSizing: 'border-box' }} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                                </div>
+                                {freeEbookStatus.error && <p style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center', fontWeight: 600 }}>{freeEbookStatus.error}</p>}
+                                <button type="submit" disabled={freeEbookStatus.loading} style={{ width: '100%', marginTop: '8px', padding: '16px', borderRadius: '14px', background: 'var(--blue)', color: '#fff', fontWeight: 800, fontSize: '16px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', opacity: freeEbookStatus.loading ? 0.7 : 1, boxShadow: '0 10px 20px -5px rgba(59,130,246,0.3)' }}>
+                                    {freeEbookStatus.loading ? 'Sedang Memproses...' : 'Kirim Ebook ke WA Saya →'}
+                                </button>
+                                <p style={{ fontSize: '11px', color: '#475569', textAlign: 'center', lineHeight: 1.5, marginTop: '8px' }}>🔒 Data aman. eBook akan segera dikirimkan sistem via WhatsApp & Email.</p>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            </section>
 
             {/* ── FEATURES ── */}
             <section style={{ padding: '0 6% 80px' }}>
@@ -676,7 +844,7 @@ export default function LandingPage() {
                         <div key={title} className="glass-card" style={{ padding: '28px', background: '#fff', borderColor: '#e2e8f0' }}>
                             <div style={{ fontSize: '28px', marginBottom: '14px' }}>{icon}</div>
                             <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>{title}</h3>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.7 }}>{desc}</p>
+                            <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.7 }}>{desc}</p>
                         </div>
                     ))}
                 </div>
@@ -715,9 +883,9 @@ export default function LandingPage() {
                         <div key={step} className="glass-card" style={{ padding: '32px', background: '#fff', borderColor: '#e2e8f0' }}>
                             <div style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 800, color: 'rgba(15,23,42,0.15)', lineHeight: 1.2, marginBottom: '16px', letterSpacing: '0' }}>{step}</div>
                             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>{title}</h3>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.75, marginBottom: '14px' }}>{desc}</p>
+                            <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.75, marginBottom: '14px' }}>{desc}</p>
                             <div style={{ padding: '10px 14px', background: 'rgba(59,130,246,0.05)', borderRadius: '10px', borderLeft: '3px solid var(--blue)' }}>
-                                <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#3b82f6', margin: 0 }}>{tip}</p>
+                                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#3b82f6', margin: 0 }}>{tip}</p>
                             </div>
                         </div>
                     ))}
@@ -740,7 +908,7 @@ export default function LandingPage() {
                             <h2 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', marginBottom: '12px', lineHeight: 1.3 }}>
                                 Informasi yang Biasanya<br /><span className="gradient-text">Cuma Dimiliki Fund Manager</span>
                             </h2>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', maxWidth: '520px', margin: '0 auto' }}>
+                            <p style={{ fontFamily: '"Inter", sans-serif', color: '#64748b', fontSize: '15px', maxWidth: '520px', margin: '0 auto' }}>
                                 Bloomberg Rp 8 juta/bulan. Refinitiv Rp 15 juta/bulan. Saham Ultimate?
                             </p>
                         </div>
@@ -754,8 +922,8 @@ export default function LandingPage() {
                                 ['👤 Public Figures & Politisi Portfolio', 'Rp 100.000'],
                                 ['📥 CSV Export Semua Data', 'Rp 100.000'],
                                 ['🎁 BONUS: Cheat Sheet 5 Tanda Whale (47 hal)', 'Rp 149.000'],
-                                ['🎁 BONUS: Tutorial Deteksi Gorengan (37 hal)', 'Rp 99.000'],
-                                ['🎁 BONUS: Watchlist Konglomerat 2025 (33 hal)', 'Rp 99.000'],
+                                ['🎁 BONUS: Tutorial Deteksi Gorengan (37 hal)', 'Rp 199.000'],
+                                ['🎁 BONUS: Watchlist Konglomerat 2025 (33 hal)', 'Rp 199.000'],
                             ].map(([item, price], i) => (
                                 <div key={i} style={{
                                     display: 'flex',
@@ -765,42 +933,42 @@ export default function LandingPage() {
                                     borderBottom: '1px solid #f1f5f9',
                                     gap: '16px',
                                 }}>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: item.includes('BONUS') ? '#f59e0b' : '#334155' }}>{item}</span>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: '#94a3b8', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{price}</span>
+                                    <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '14px', color: item.includes('BONUS') ? '#f59e0b' : '#334155' }}>{item}</span>
+                                    <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '14px', color: '#94a3b8', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{price}</span>
                                 </div>
                             ))}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0 0', gap: '16px' }}>
-                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Total Nilai</span>
-                                <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '18px', fontWeight: 800, color: '#94a3b8', textDecoration: 'line-through' }}>Rp 1.147.000</span>
+                                <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Total Nilai</span>
+                                <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '18px', fontWeight: 800, color: '#94a3b8', textDecoration: 'line-through' }}>Rp 1.149.000</span>
                             </div>
                         </div>
 
                         {/* Price */}
                         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                            <div className="offer-price-old" style={{ marginBottom: '4px', color: '#64748b' }}>Nilai total Rp 1.147.000</div>
+                            <div className="offer-price-old" style={{ marginBottom: '4px', color: '#64748b' }}>Nilai total Rp 1.149.000</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <span className="offer-price-new" style={{ color: '#0f172a' }}>Rp 99.000</span>
+                                <span className="offer-price-new" style={{ color: '#0f172a' }}>Rp 199.000</span>
                             </div>
                             <div className="badge-pill" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', margin: '0 auto', marginBottom: '12px' }}>
-                                ⚡ Hemat 91% — Sekali Bayar
+                                ⚡ Hemat 82% — Sekali Bayar
                             </div>
                             <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>
                                 BERAKHIR DALAM: {countdown}
                             </div>
                             <div style={{ color: '#ef4444', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>
-                                Promo Ini hanya berlaku hari ini!
+                                Kesempatan terakhir harga promo 199rb!
                             </div>
                             <div style={{ color: '#ef4444', fontWeight: 500, fontSize: '13px', opacity: 0.9 }}>
-                                Harga Akan naik ke 249.000 Setelah jam ini habis
+                                Manfaatkan potongan Rp 950.000 hari ini.
                             </div>
                         </div>
 
                         <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/payment')}>
-                                Akses Sekarang — Rp 99.000
+                            <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={scrollToCheckout}>
+                                Akses Sekarang — Rp 199.000
                             </button>
                         </div>
-                        <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px', textAlign: 'center' }}>
+                        <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px', textAlign: 'center' }}>
                             Sekali bayar • Tanpa berlangganan • Langsung akses + 3 Bonus PDF
                         </p>
                     </div>
@@ -815,7 +983,7 @@ export default function LandingPage() {
                         <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.2px', marginBottom: '12px', lineHeight: 1.35 }}>
                             3 PDF Bonus — <span className="gold-text">Total 117 Halaman</span>
                         </h2>
-                        <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '14px' }}>
+                        <p style={{ fontFamily: '"Inter", sans-serif', color: '#64748b', fontSize: '14px' }}>
                             Ditulis eksklusif oleh tim Saham Ultimate. Tidak dijual terpisah di mana pun.
                         </p>
                     </div>
@@ -857,11 +1025,11 @@ export default function LandingPage() {
                                     justifyContent: 'center',
                                 }}>
                                     <span style={{ fontSize: '18px', fontWeight: 800, color, lineHeight: 1 }}>{num}</span>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '9px', color: `${color}99`, fontWeight: 600 }}>HAL</span>
+                                    <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '9px', color: `${color}99`, fontWeight: 600 }}>HAL</span>
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>{title}</h3>
-                                    <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.65, marginBottom: '10px' }}>{desc}</p>
+                                    <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.65, marginBottom: '10px' }}>{desc}</p>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                         {tags.map(t => (
                                             <span key={t} className="badge-pill" style={{ background: `${color}10`, border: `1px solid ${color}25`, color: `${color}cc`, fontSize: '11px' }}>{t}</span>
@@ -888,7 +1056,7 @@ export default function LandingPage() {
                             <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: '#0f172a', letterSpacing: '0', marginBottom: '12px', lineHeight: 1.3 }}>
                                 Kami Berintegritas
                             </h2>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '14px', maxWidth: '540px', lineHeight: 1.7 }}>
+                            <p style={{ fontFamily: '"Inter", sans-serif', color: '#64748b', fontSize: '14px', maxWidth: '540px', lineHeight: 1.7 }}>
                                 Setiap produk yang dijual anggota <strong style={{ color: '#0f172a' }}>eL Vision</strong> menggunakan arsitektur kami diwajibkan untuk menampilkan review dari <em>verified buyer</em> — bukan testimoni anonim, bukan ulasan palsu. Review hanya bisa ditulis oleh akun yang sudah melakukan pembelian terverifikasi.
                             </p>
                         </div>
@@ -905,7 +1073,7 @@ export default function LandingPage() {
                                     <div style={{ width: '28px', height: '28px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', color: '#22c55e', fontWeight: 700 }}>{icon}</div>
                                     <div>
                                         <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', marginBottom: '2px' }}>{title}</div>
-                                        <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.6 }}>{desc}</div>
+                                        <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '13px', color: '#64748b', lineHeight: 1.6 }}>{desc}</div>
                                     </div>
                                 </div>
                             ))}
@@ -922,11 +1090,11 @@ export default function LandingPage() {
                         <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 800, color: '#0f172a', letterSpacing: '0', marginBottom: '8px', lineHeight: 1.3 }}>
                             Apa Kata 500+ Pembeli
                         </h2>
-                        <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '13px' }}>
+                        <p style={{ fontFamily: '"Inter", sans-serif', color: '#64748b', fontSize: '13px' }}>
                             Menampilkan {dbReviews.length + REVIEWS.length} review terverifikasi •{' '}
                             <button
                                 onClick={() => navigate('/review')}
-                                style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontFamily: '"DM Sans", sans-serif', fontSize: '13px', textDecoration: 'underline' }}
+                                style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontFamily: '"Inter", sans-serif', fontSize: '13px', textDecoration: 'underline' }}
                             >
                                 Tulis review anda
                             </button>
@@ -938,16 +1106,16 @@ export default function LandingPage() {
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: '42px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>4.9</div>
                             <StarRating rating={5} />
-                            <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#475569', marginTop: '2px' }}>dari {dbReviews.length + 500}+ ulasan</div>
+                            <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '11px', color: '#475569', marginTop: '2px' }}>dari {dbReviews.length + 500}+ ulasan</div>
                         </div>
                         <div style={{ flex: 1, minWidth: '200px' }}>
                             {[['5 bintang', 91], ['4 bintang', 7], ['3 bintang', 2]].map(([label, pct]) => (
                                 <div key={String(label)} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#64748b', width: '60px' }}>{label}</span>
+                                    <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '11px', color: '#64748b', width: '60px' }}>{label}</span>
                                     <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
                                         <div style={{ height: '100%', width: `${pct}%`, background: '#f59e0b', borderRadius: '3px' }} />
                                     </div>
-                                    <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#475569', width: '28px' }}>{pct}%</span>
+                                    <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '11px', color: '#475569', width: '28px' }}>{pct}%</span>
                                 </div>
                             ))}
                         </div>
@@ -977,10 +1145,10 @@ export default function LandingPage() {
                                     </div>
                                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                         <StarRating rating={r.rating} />
-                                        <div style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '11px', color: '#334155', marginTop: '2px' }}>{r.date}</div>
+                                        <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '11px', color: '#334155', marginTop: '2px' }}>{r.date}</div>
                                     </div>
                                 </div>
-                                <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '14px', color: '#2c3e50', lineHeight: 1.7 }}>{r.text}</p>
+                                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '14px', color: '#2c3e50', lineHeight: 1.7 }}>{r.text}</p>
                             </div>
                         ))}
                     </div>
@@ -998,7 +1166,7 @@ export default function LandingPage() {
                                     background: i === reviewPage ? 'rgba(59,130,246,0.15)' : 'transparent',
                                     color: i === reviewPage ? '#93c5fd' : '#475569',
                                     cursor: 'pointer',
-                                    fontFamily: '"Syne", sans-serif',
+                                    fontFamily: '"Inter", sans-serif',
                                     fontWeight: 700,
                                     fontSize: '13px',
                                     transition: 'all 0.2s',
@@ -1011,7 +1179,7 @@ export default function LandingPage() {
 
                     {/* Write review prompt */}
                     <div style={{ textAlign: 'center', marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-                        <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#475569', marginBottom: '10px' }}>
+                        <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '13px', color: '#475569', marginBottom: '10px' }}>
                             Sudah beli dan ingin berbagi pengalaman?
                         </p>
                         <button
@@ -1056,17 +1224,166 @@ export default function LandingPage() {
                     <h2 style={{ fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: 800, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: '20px' }}>
                         Stop Tebak-tebakan.<br /><span className="gradient-text">Baca Jejaknya.</span>
                     </h2>
-                    <p style={{ fontFamily: '"DM Sans", sans-serif', color: '#64748b', fontSize: '15px', marginBottom: '36px', lineHeight: 1.7 }}>
+                    <p style={{ fontFamily: '"Inter", sans-serif', color: '#64748b', fontSize: '15px', marginBottom: '36px', lineHeight: 1.7 }}>
                         Ribuan investor ritel sudah menggunakan data ini. Sementara kamu baca halaman ini, whale mungkin sedang akumulasi saham yang besok harganya bergerak.
                     </p>
                     <div className="hero-btns" style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={() => navigate('/payment')}>
-                            Akses Sekarang — Rp 99.000
+                        <button className="btn-primary" style={{ fontSize: '16px', padding: '18px 36px' }} onClick={scrollToCheckout}>
+                            Akses Sekarang — Rp 199.000
                         </button>
                     </div>
-                    <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
+                    <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#64748b', marginTop: '16px' }}>
                         Sekali bayar • Tanpa berlangganan • Langsung akses + 3 Bonus PDF
                     </p>
+                </div>
+            </section>
+
+            {/* ── REAL TALK / HARD TRUTH SECTION ── */}
+            <section style={{ padding: '0 6% 60px', textAlign: 'center' }}>
+                <div style={{ 
+                    maxWidth: '800px', 
+                    margin: '0 auto', 
+                    padding: '40px', 
+                    background: 'linear-gradient(135deg, #0f172a, #1e293b)', 
+                    borderRadius: '24px', 
+                    border: '1px solid #ef444466',
+                    boxShadow: '0 0 50px rgba(239, 68, 68, 0.1)'
+                }}>
+                    <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '14px', letterSpacing: '0.1em', marginBottom: '16px' }}>— REAL TALK —</div>
+                    <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: '20px', lineHeight: 1.4 }}>
+                        Kenapa Rp 199.000 Termasuk <span style={{ textDecoration: 'underline wavy #ef4444' }}>Sangat Murah</span>?
+                    </h3>
+                    <div style={{ fontFamily: '"Inter", sans-serif', color: '#cbd5e1', fontSize: '16px', lineHeight: 1.8, textAlign: 'center' }}>
+                        <p style={{ marginBottom: '20px' }}>
+                            Bagi pemain saham sungguhan, angka ini hanyalah seharga kopi.
+                        </p>
+                        <p style={{ fontWeight: 700, color: '#fff' }}>
+                            Orang bisa judol sampai jutaan, dan membeli saham tanpa data lengkap itu 11/12 sama judol. Tapi merasa harga ini kemahalan?
+                        </p>
+                        <p style={{ marginTop: '20px', color: '#94a3b8' }}>
+                            Lebih baik anda jangan trading dulu, kerja yang bener atau kembali mode judol. <br />
+                            Saham Ultimate hanya untuk trader yang paham bahwa <span style={{ color: '#f59e0b' }}>Data adalah satu-satunya pelindung modal anda.</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── CHECKOUT FORM ── */}
+            <section id="checkout-form" style={{ padding: '0 6% 80px' }}>
+                <div style={{
+                    background: 'linear-gradient(135deg, #0A0612 0%, #13141c 50%, #0A0612 100%)',
+                    border: '1px solid rgba(59,130,246,0.25)',
+                    borderRadius: '28px',
+                    padding: 'clamp(28px, 6vw, 56px)',
+                    maxWidth: '560px',
+                    margin: '0 auto',
+                    boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                }}>
+                    {payInstructions && payData ? (
+                        <div>
+                            <h2 style={{ fontFamily: '"Inter", sans-serif', fontSize: '24px', fontWeight: 800, color: '#fff', textAlign: 'center', marginBottom: '8px' }}>Instruksi Pembayaran</h2>
+                            <p style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginBottom: '4px', fontWeight: 600 }}>Reference: <span style={{ color: '#60a5fa' }}>{payData.tripay_reference}</span></p>
+                            <p style={{ textAlign: 'center', fontSize: '12px', color: '#10b981', marginBottom: '24px' }}>⚡ Sistem akan mendeteksi pembayaran secara otomatis</p>
+                            {payData.payCode && (
+                                <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '20px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                                    <p style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '8px', textAlign: 'center' }}>KODE PEMBAYARAN {payMethod}</p>
+                                    <div style={{ background: '#e2e8f0', padding: '14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '22px', fontWeight: 700, fontFamily: 'monospace', color: '#0f172a' }}>{payData.payCode}</span>
+                                        <button onClick={() => navigator.clipboard.writeText(payData.payCode)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><Copy size={22} color="#3b82f6" /></button>
+                                    </div>
+                                </div>
+                            )}
+                            {payData.qrUrl && (
+                                <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '24px', border: '1px solid #e2e8f0', textAlign: 'center', marginBottom: '16px' }}>
+                                    <h3 style={{ fontSize: '18px', marginBottom: '8px', fontWeight: 700, color: '#0f172a' }}>Scan QRIS</h3>
+                                    <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', lineHeight: 1.6 }}>Buka aplikasi E-Wallet (GoPay/DANA/ShopeePay/OVO) atau Mobile Banking.</p>
+                                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                        <img src={payData.qrUrl} alt="QRIS" style={{ width: '230px', height: '230px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }} />
+                                    </div>
+                                    <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '10px', color: '#166534', fontSize: '13px', fontWeight: 600 }}>
+                                        ✅ Screenshot QRIS ini lalu upload dari galeri di aplikasi pembayaran Anda.
+                                    </div>
+                                </div>
+                            )}
+                            <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'center', lineHeight: 1.6, marginBottom: '16px' }}>Setelah membayar, sistem mendeteksi otomatis dan mengirimkan akses ke WhatsApp/Email Anda.</p>
+                            <button className="btn-primary" style={{ width: '100%', padding: '14px' }} onClick={() => setPayInstructions(false)}>Kembali ke Form</button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleCheckout}>
+                            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                                <div className="section-eyebrow">Langkah Terakhir</div>
+                                <h2 style={{ fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.2px', marginBottom: '8px', lineHeight: 1.3 }}>
+                                    Isi Data &amp; <span style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Dapatkan Akses</span>
+                                </h2>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                                    {[['🔒', '100% Privasi'], ['⚡', 'Akses Instan'], ['💳', 'Bayar Aman'], ['📱', 'Seumur Hidup']].map(([ic, lb]) => (
+                                        <div key={lb} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#94a3b8' }}><span>{ic}</span><span>{lb}</span></div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Nama Lengkap</label>
+                                    <input required placeholder="Contoh: Sarah" value={payName} onChange={e => setPayName(e.target.value)}
+                                        style={{ width: '100%', padding: '13px 15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>No. WhatsApp</label>
+                                    <div style={{ display: 'flex' }}>
+                                        <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(255,255,255,0.1)', borderRight: 'none', borderRadius: '12px 0 0 12px', padding: '13px 14px', fontSize: '16px', fontWeight: 600, color: '#60a5fa', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>🇮🇩 +62</div>
+                                        <input required type="tel" placeholder="812345678" value={payPhone} onChange={e => setPayPhone(e.target.value)}
+                                            style={{ flex: 1, padding: '13px 15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0 12px 12px 0', color: '#fff', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Email (untuk link download)</label>
+                                    <input required type="email" placeholder="contoh@gmail.com" value={payEmail} onChange={e => setPayEmail(e.target.value)}
+                                        style={{ width: '100%', padding: '13px 15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Buat Password <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'none', fontWeight: 'normal' }}>(untuk akses Dashboard)</span></label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input required type={showPayPassword ? 'text' : 'password'} placeholder="Minimal 6 karakter" value={payPassword} onChange={e => setPayPassword(e.target.value)}
+                                            style={{ width: '100%', padding: '13px 45px 13px 15px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '16px', outline: 'none', boxSizing: 'border-box' }} />
+                                        <button type="button" onClick={() => setShowPayPassword(!showPayPassword)} style={{ position: 'absolute', right: '14px', top: '14px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 0 }}>
+                                            {showPayPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Metode Pembayaran</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                        {[['QRIS', 'QRIS', 'Shopee, OVO, DANA'], ['BCAVA', 'BCA VA', 'Otomatis via BCA'], ['BNIVA', 'BNI VA', 'Otomatis via BNI'], ['BRIVA', 'BRI VA', 'Otomatis via BRI']].map(([id, nm, sb]) => (
+                                            <div key={id} onClick={() => setPayMethod(id)}
+                                                style={{ border: `1px solid ${payMethod === id ? '#60a5fa' : 'rgba(255,255,255,0.1)'}`, background: payMethod === id ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '12px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{nm}</div>
+                                                <div style={{ fontSize: '11px', color: id === 'QRIS' ? '#f59e0b' : '#64748b', marginTop: '3px' }}>{sb}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '12px', padding: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
+                                        <span>Saham Ultimate Lifetime</span><span>Rp 199.000</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 800, paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <span style={{ color: '#fff' }}>Total</span>
+                                        <span style={{ color: '#f59e0b' }}>Rp 199.000</span>
+                                    </div>
+                                </div>
+
+                                <button type="submit" disabled={payLoading}
+                                    style={{ width: '100%', padding: '18px', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '17px', fontWeight: 800, cursor: 'pointer', fontFamily: '"Inter", sans-serif', boxShadow: '0 10px 30px rgba(37,99,235,0.4)', transition: 'transform 0.2s', opacity: payLoading ? 0.7 : 1, marginTop: '4px' }}>
+                                    {payLoading ? 'Memproses...' : '🛒 Bayar Sekarang — Rp 199.000'}
+                                </button>
+                                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '11px', color: '#64748b', textAlign: 'center', lineHeight: 1.6 }}>
+                                    🔒 Pembayaran aman &amp; dienkripsi. Produk dikirim digital lewat WhatsApp &amp; Email.
+                                </p>
+                            </div>
+                        </form>
+                    )}
                 </div>
             </section>
 
@@ -1075,165 +1392,18 @@ export default function LandingPage() {
                 <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
                     SAHAM<span className="gradient-text">ULTIMATE</span>
                 </div>
-                <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#334155', textAlign: 'center' }}>
+                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#334155', textAlign: 'center' }}>
                     © 2026 Saham Ultimate • Arsitektur oleh eL Vision • Data: KSEI IDX • Bukan Saran Investasi
                 </p>
                 <div style={{ display: 'flex', gap: '16px' }}>
                     {['Privacy', 'Terms', 'Support'].map(l => (
-                        <span key={l} style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '12px', color: '#334155', cursor: 'pointer' }}>{l}</span>
+                        <span key={l} style={{ fontFamily: '"Inter", sans-serif', fontSize: '12px', color: '#334155', cursor: 'pointer' }}>{l}</span>
                     ))}
                 </div>
             </footer>
 
             {/* ── FREE EBOOK MODAL ── */}
-            {freeEbookModal && (
-                <div
-                    onClick={() => setFreeEbookModal(false)}
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-                >
-            <div
-                        onClick={e => e.stopPropagation()}
-                        style={{ 
-                            background: '#0d1422', 
-                            border: '1px solid rgba(139,92,246,0.2)', 
-                            borderRadius: '24px', 
-                            padding: 'clamp(20px, 5vw, 32px)', 
-                            maxWidth: '440px', 
-                            width: '95%', 
-                            position: 'relative',
-                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-                            maxHeight: '90vh',
-                            overflowY: 'auto'
-                        }}
-                    >
-                        <button 
-                            onClick={() => setFreeEbookModal(false)}
-                            style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
-                        >
-                            ×
-                        </button>
 
-                        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🎁</div>
-                            <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', marginBottom: '8px', letterSpacing: '-0.5px' }}>Dapatkan Ebook Gratis</h3>
-                            <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '13px', color: '#94a3b8', lineHeight: 1.5 }}>
-                                Strategi Mendeteksi Akumulasi Whale & Menghindari Saham Low-Float berbahaya.
-                            </p>
-                        </div>
-
-                        {freeEbookStatus.success ? (
-                            <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(34,197,94,0.1)', borderRadius: '20px', border: '1px solid rgba(34,197,94,0.2)' }}>
-                                <div style={{ fontSize: '36px', marginBottom: '10px' }}>✅</div>
-                                <h4 style={{ color: '#fff', fontSize: '17px', fontWeight: 700, marginBottom: '8px' }}>Berhasil Dikirim!</h4>
-                                <p style={{ color: '#94a3b8', fontSize: '13px', lineHeight: 1.5 }}>Silahkan Periksa <strong>WhatsApp</strong> anda. Ketik <strong>Ya</strong> jika anda ingin menerima Free ebook..</p>
-                                <button 
-                                    className="btn-primary" 
-                                    style={{ marginTop: '20px', width: '100%', padding: '12px' }} 
-                                    onClick={() => setFreeEbookModal(false)}
-                                >
-                                    Tutup
-                                </button>
-                            </div>
-                        ) : (
-                            <form onSubmit={handleFreeEbook} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>NAMA LENGKAP</label>
-                                    <input 
-                                        required
-                                        type="text" 
-                                        placeholder="Nama Kamu"
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>NOMOR WHATSAPP</label>
-                                    <div style={{ display: 'flex', width: '100%' }}>
-                                        <div style={{ 
-                                            background: 'rgba(255,255,255,0.02)', 
-                                            border: '1px solid rgba(255,255,255,0.1)', 
-                                            borderRight: 'none', 
-                                            borderRadius: '12px 0 0 12px', 
-                                            padding: '0 12px', 
-                                            fontSize: '14px', 
-                                            fontWeight: 600, 
-                                            color: '#fff', 
-                                            display: 'flex', 
-                                            alignItems: 'center',
-                                            whiteSpace: 'nowrap'
-                                        }}>
-                                            🇮🇩 +62
-                                        </div>
-                                        <input 
-                                            required
-                                            type="tel" 
-                                            placeholder="812345678"
-                                            style={{ 
-                                                flex: 1,
-                                                background: 'rgba(255,255,255,0.05)', 
-                                                border: '1px solid rgba(255,255,255,0.1)', 
-                                                borderRadius: '0 12px 12px 0', 
-                                                padding: '12px 14px', 
-                                                color: '#fff', 
-                                                fontSize: '14px', 
-                                                outline: 'none',
-                                                width: '100%',
-                                                boxSizing: 'border-box'
-                                            }}
-                                            value={formData.phone}
-                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#c084fc', marginLeft: '4px', letterSpacing: '0.05em' }}>EMAIL AKTIF</label>
-                                    <input 
-                                        required
-                                        type="email" 
-                                        placeholder="Email Aktif"
-                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    />
-                                </div>
-
-                                {freeEbookStatus.error && (
-                                    <p style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center', fontWeight: 600 }}>{freeEbookStatus.error}</p>
-                                )}
-                                
-                                <button 
-                                    type="submit" 
-                                    disabled={freeEbookStatus.loading}
-                                    style={{ 
-                                        width: '100%', 
-                                        marginTop: '12px', 
-                                        padding: '16px', 
-                                        borderRadius: '14px', 
-                                        background: 'var(--blue)', 
-                                        color: '#fff', 
-                                        fontWeight: 800, 
-                                        fontSize: '16px', 
-                                        border: 'none', 
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        opacity: freeEbookStatus.loading ? 0.7 : 1,
-                                        boxShadow: '0 10px 20px -5px rgba(59,130,246,0.3)'
-                                    }}
-                                >
-                                    {freeEbookStatus.loading ? 'Sedang Memproses...' : 'Kirim Ebook ke WA Saya →'}
-                                </button>
-                                
-                                <p style={{ fontSize: '11px', color: '#475569', textAlign: 'center', lineHeight: 1.5, marginTop: '8px' }}>
-                                    🔒 Data kamu aman. eBook akan segera dikirimkan sistem otomatis via WhatsApp & Email.
-                                </p>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            )}
 
 
             {/* ── FLOATING WHATSAPP BUTTON ── */}
