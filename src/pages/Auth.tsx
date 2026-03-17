@@ -50,7 +50,9 @@ export default function Auth() {
             });
 
             if (result.error) {
-                // If login fails, check if this is a PAID user who hasn't registered yet
+                console.log("Neon SignIn Error:", result.error);
+                
+                // Fallback 1: Check if this is a PAID user who hasn't registered yet
                 const paidCheck = await sql`
                     SELECT * FROM global_product 
                     WHERE email = ${email.trim()} 
@@ -62,30 +64,37 @@ export default function Auth() {
                     const payment = paidCheck[0];
                     console.log("Paid user found, attempting auto-registration...");
                     
-                    const signupResult = await authClient.signUp.email({
-                        email: email.trim(),
-                        password: pass,
-                        name: payment.name || 'User',
-                    });
+                    try {
+                        const signupResult = await authClient.signUp.email({
+                            email: email.trim(),
+                            password: pass,
+                            name: payment.name || 'Investor',
+                        });
 
-                    if (signupResult.error) throw signupResult.error;
+                        if (signupResult.error) throw signupResult.error;
 
-                    // Immediately sign them in now that they exist in Neon Auth
-                    await authClient.signIn.email({
-                        email: email.trim(),
-                        password: pass,
-                    });
+                        // Immediately sign them in now that they exist in Neon Auth
+                        await authClient.signIn.email({
+                            email: email.trim(),
+                            password: pass,
+                        });
 
-                    // After signup, ensure they are in saham_clients
-                    await sql`
-                        INSERT INTO saham_clients (user_email, status, created_at, last_login)
-                        VALUES (${email.trim()}, 'active', NOW(), NOW())
-                        ON CONFLICT (user_email) DO UPDATE SET status = 'active'
-                    `;
+                        // After signup, ensure they are in saham_clients
+                        await sql`
+                            INSERT INTO saham_clients (user_email, status, created_at, last_login)
+                            VALUES (${email.trim()}, 'active', NOW(), NOW())
+                            ON CONFLICT (user_email) DO UPDATE SET status = 'active', last_login = NOW()
+                        `;
 
-                    toast.success("Akun diaktifkan secara otomatis!");
-                    navigate("/sheets");
-                    return;
+                        toast.success("Akun diaktifkan secara otomatis!");
+                        navigate("/sheets");
+                        return;
+                    } catch (e: any) {
+                        console.error("Auto-Registration Failed:", e);
+                        toast.error("Gagal registrasi otomatis: " + (e.message || JSON.stringify(e)));
+                        setLoading(false);
+                        return;
+                    }
                 }
 
                 // Fallback 2: Check if they are an active user in saham_clients but lost their Neon Auth record (db reset)
@@ -100,32 +109,40 @@ export default function Auth() {
                     const client = clientCheck[0];
                     console.log("Existing active client found, restoring Neon Auth record...");
                     
-                    const signupResult = await authClient.signUp.email({
-                        email: email.trim(),
-                        password: pass,
-                        name: client.name || 'User',
-                    });
+                    try {
+                        const signupResult = await authClient.signUp.email({
+                            email: email.trim(),
+                            password: pass,
+                            name: client.name || 'Investor',
+                        });
 
-                    if (signupResult.error) throw signupResult.error;
+                        if (signupResult.error) throw signupResult.error;
 
-                    // Immediately sign them in now that they exist in Neon Auth
-                    await authClient.signIn.email({
-                        email: email.trim(),
-                        password: pass,
-                    });
+                        // Immediately sign them in now that they exist in Neon Auth
+                        await authClient.signIn.email({
+                            email: email.trim(),
+                            password: pass,
+                        });
 
-                    // Update their status and login time in saham_clients
-                    await sql`
-                        UPDATE saham_clients 
-                        SET status = 'active', last_login = NOW()
-                        WHERE user_email = ${email.trim()}
-                    `;
+                        // Update their status and login time in saham_clients
+                        await sql`
+                            UPDATE saham_clients 
+                            SET status = 'active', last_login = NOW()
+                            WHERE user_email = ${email.trim()}
+                        `;
 
-                    toast.success("Login berhasil (akun direstorasi)!");
-                    navigate("/sheets");
-                    return;
+                        toast.success("Login berhasil (akun direstorasi)!");
+                        navigate("/sheets");
+                        return;
+                    } catch (e: any) {
+                        console.error("Restoration Failed:", e);
+                        toast.error("Gagal restorasi akun: " + (e.message || JSON.stringify(e)));
+                        setLoading(false);
+                        return;
+                    }
                 }
 
+                // If fallbacks fail, throw the original login error
                 throw result.error;
             }
 
