@@ -20,8 +20,8 @@ async function testSignup() {
     try {
         console.log("Attempting to sign up test user...");
         const result = await authClient.signUp.email({
-            email: 'elvisiondragon@gmail.com',
-            password: 'TestPassword123!',
+            email: 'dragon@yahoo.com',
+            password: 'Ewekuda7',
             name: 'Test User'
         }, {
             fetchOptions: {

@@ -72,9 +72,9 @@ export default function Auth() {
 
                     // After signup, ensure they are in saham_clients
                     await sql`
-                        INSERT INTO saham_clients (user_email, name, phone, password, status, created_at, last_login)
-                        VALUES (${email.trim()}, ${payment.name || ''}, ${payment.phone || ''}, ${pass}, 'active', NOW(), NOW())
-                        ON CONFLICT (user_email) DO UPDATE SET status = 'active', password = EXCLUDED.password
+                        INSERT INTO saham_clients (user_email, status, created_at, last_login)
+                        VALUES (${email.trim()}, 'active', NOW(), NOW())
+                        ON CONFLICT (user_email) DO UPDATE SET status = 'active'
                     `;
 
                     toast.success("Akun diaktifkan secara otomatis!");
@@ -102,10 +102,10 @@ export default function Auth() {
 
                     if (signupResult.error) throw signupResult.error;
 
-                    // Update their password in saham_clients to the new one
+                    // Update their status and login time in saham_clients
                     await sql`
                         UPDATE saham_clients 
-                        SET password = ${pass}, last_login = NOW()
+                        SET status = 'active', last_login = NOW()
                         WHERE user_email = ${email.trim()}
                     `;
 
@@ -143,8 +143,8 @@ export default function Auth() {
                     if (paidHistory && paidHistory.length > 0) {
                         const p = paidHistory[0];
                         await sql`
-                            INSERT INTO saham_clients (user_email, name, phone, password, status, created_at, last_login)
-                            VALUES (${userEmail}, ${p.name || ''}, ${p.phone || ''}, ${p.address || ''}, 'active', NOW(), NOW())
+                            INSERT INTO saham_clients (user_email, status, created_at, last_login)
+                            VALUES (${userEmail}, 'active', NOW(), NOW())
                             ON CONFLICT (user_email) DO NOTHING
                         `;
                         toast.success("Akses diaktifkan!");
