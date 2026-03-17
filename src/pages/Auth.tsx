@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authClient } from '../lib/auth';
+import { useAuth } from '../context/AuthContext';
 import { sql } from '../lib/db';
 import { toast } from 'sonner';
 import { Mail, Lock, Eye, EyeOff, Zap, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
@@ -20,6 +21,7 @@ const Sparkline = ({ up }: { up: boolean }) => (
 
 export default function Auth() {
     const navigate = useNavigate();
+    const { session, refreshSession } = useAuth();
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
     const [loading, setLoading] = useState(false);
@@ -28,15 +30,13 @@ export default function Auth() {
     const [tick, setTick] = useState(0);
 
     useEffect(() => {
+        if (session) navigate('/sheets', { replace: true });
+    }, [session, navigate]);
+
+    useEffect(() => {
         const t = setInterval(() => setTick(x => x + 1), 60);
         return () => clearInterval(t);
     }, []);
-
-    useEffect(() => {
-        authClient.getSession().then((result) => {
-            if (result.data?.session) navigate('/sheets');
-        });
-    }, [navigate]);
 
     const handleLogin = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -87,6 +87,7 @@ export default function Auth() {
                         `;
 
                         toast.success("Akun diaktifkan secara otomatis!");
+                        await refreshSession();
                         navigate("/sheets");
                         return;
                     } catch (e: any) {
@@ -132,6 +133,7 @@ export default function Auth() {
                         `;
 
                         toast.success("Login berhasil (akun direstorasi)!");
+                        await refreshSession();
                         navigate("/sheets");
                         return;
                     } catch (e: any) {
@@ -157,6 +159,7 @@ export default function Auth() {
                     await sql`UPDATE saham_clients SET last_login = ${new Date().toISOString()} WHERE user_email = ${userEmail}`;
                     
                     toast.success("Selamat datang kembali!");
+                    await refreshSession();
                     navigate("/sheets");
                 } else {
                     // This case should be handled by the auto-migration logic above or below
@@ -177,6 +180,7 @@ export default function Auth() {
                             ON CONFLICT (user_email) DO NOTHING
                         `;
                         toast.success("Akses diaktifkan!");
+                        await refreshSession();
                         navigate("/sheets");
                     } else {
                         toast.error("Anda belum memiliki akses Saham Ultimate.");

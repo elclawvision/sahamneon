@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authClient } from '../lib/auth';
+import { useAuth } from '../context/AuthContext';
 import { sql } from '../lib/db';
 import { toast } from 'sonner';
 import { Mail, Lock, Eye, EyeOff, Star, Trash2, ArrowLeft } from "lucide-react";
 
 export default function ReviewPage() {
     const navigate = useNavigate();
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const { user, refreshSession } = useAuth();
     const [loginEmail, setLoginEmail] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoginLoading, setIsLoginLoading] = useState(false);
-    const [userEmailSession, setUserEmailSession] = useState("");
     
     // Review States
     const [userReview, setUserReview] = useState<any>(null);
@@ -38,21 +38,14 @@ export default function ReviewPage() {
         }
     };
 
-    useEffect(() => {
-        const checkSession = async () => {
-            const result = await authClient.getSession();
-            if (result.data?.session?.user) {
-                setIsLoggedIn(true);
-                const email = result.data.session.user.email || "";
-                setUserEmailSession(email);
-                fetchUserReview(email);
-            }
-        };
-        checkSession();
+    const isLoggedIn = !!user;
+    const userEmailSession = user?.email || "";
 
-        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
-        // so we rely on manual updates or periodic checks.
-    }, []);
+    useEffect(() => {
+        if (userEmailSession) {
+            fetchUserReview(userEmailSession);
+        }
+    }, [userEmailSession]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -65,6 +58,7 @@ export default function ReviewPage() {
             if (result.error) throw result.error;
             if (result.data?.user) {
                 toast.success("Login Berhasil");
+                await refreshSession();
             }
         } catch (error: any) {
             toast.error(error.message || "Login Gagal");
@@ -327,7 +321,7 @@ export default function ReviewPage() {
                                 <button
                                     onClick={async () => {
                                         await authClient.signOut();
-                                        setIsLoggedIn(false);
+                                        await refreshSession();
                                     }}
                                     style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
                                 >

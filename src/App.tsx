@@ -7,35 +7,21 @@ import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
 import Payment from './pages/Payment';
 import ReviewPage from './pages/ReviewPage';
-import { authClient } from './lib/auth';
+import { useAuth } from './context/AuthContext';
 import { Toaster } from 'sonner';
 
 function App() {
-    const [session, setSession] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        authClient.getSession().then((result) => {
-            if (result.data?.session) {
-                setSession(result.data.session);
-            }
-            setLoading(false);
-        });
-
-        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
-        // so we rely on periodic checks or manual updates if needed.
-        // For now, getSession at startup is the main flow.
-    }, []);
+    const { session, loading } = useAuth();
 
     if (loading) return null;
 
     return (
         <BrowserRouter>
             <Routes>
-                {/* LP always accessible */}
+                {/* LP accessible; Redirection handled inside component if logged in */}
                 <Route path="/lp" element={<LandingPage />} />
                 
-                {/* Auth Page */}
+                {/* Auth Page: Redirection handled inside component if logged in */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -57,6 +43,9 @@ function App() {
                 {/* Legacy cleanup redirect */}
                 <Route path="/saham" element={<Navigate to="/sheets" replace />} />
                 <Route path="/free-float" element={<Navigate to="/sheets" replace />} />
+                
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <style>{`
                 [data-sonner-toaster] {

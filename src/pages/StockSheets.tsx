@@ -7,6 +7,7 @@ import { publicFigures } from '../data/publicFigures';
 import { hotSearches } from '../data/hotSearches';
 import { StockRow, InvestorRow } from '../types/stock';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { authClient } from '../lib/auth';
 
 import { getFreeFloatColumns, getStockColumns, getInvestorColumns } from './StockSheetColumns';
@@ -23,6 +24,7 @@ type DrillItem = {
 
 const StockSheets: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
+    const { user, signOut } = useAuth();
     const [activeTab, setActiveTab] = useState<'tickers' | 'investor' | 'conglomerate' | 'celebrities'>('tickers');
     const [tickerSubTab, setTickerSubTab] = useState<'all' | 'free'>('all');
     const [floatFilter, setFloatFilter] = useState<'all' | 'low' | 'below15' | 'mid' | 'high'>('all');
@@ -35,7 +37,6 @@ const StockSheets: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [drillStack, setDrillStack] = useState<DrillItem[]>([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-    const [userEmail, setUserEmail] = useState<string | null>(null);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [lastUpdate, setLastUpdate] = useState(localStorage.getItem('saham_last_update') || 'Maret 2026');
     const [updateSuccess, setUpdateSuccess] = useState(false);
@@ -50,19 +51,16 @@ const StockSheets: React.FC = () => {
     }, []);
 
     // Auth Logic
+    const userEmail = user?.email || null;
+    
     useEffect(() => {
-        authClient.getSession().then((result) => {
-            setUserEmail(result.data?.session?.user?.email || null);
-        });
-
-        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
-        // so we rely on manual updates or periodic checks.
+        // No longer needed to fetch session locally
     }, []);
 
     const handleLogout = async () => {
-        await authClient.signOut();
-        setUserEmail(null);
+        await signOut();
         setShowProfileMenu(false);
+        navigate('/lp', { replace: true });
     };
 
     const handleLogin = () => {

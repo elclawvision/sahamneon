@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ShieldCheck, Zap, TrendingUp, BarChart3, Users, Clock, ArrowRight, CheckCircle2, Menu, X, Rocket, GraduationCap, ChevronRight, MessageSquare, Shield, Lock, Layout, PlayCircle, Eye, EyeOff, Copy } from 'lucide-react';
 import { authClient } from '../lib/auth';
+import { useAuth } from '../context/AuthContext';
 import { sql } from '../lib/db';
 import DemoDashboard from './DemoDashboard';
 
@@ -130,6 +131,15 @@ const scrollToEbook = () => {
 
 export default function LandingPage() {
     const navigate = useNavigate();
+    const { session } = useAuth();
+    
+    // Auth Check: Redirect if already logged in
+    useEffect(() => {
+        if (session) {
+            navigate('/sheets', { replace: true });
+        }
+    }, [session, navigate]);
+
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [reviewPage, setReviewPage] = useState(0);
     const [freeEbookStatus, setFreeEbookStatus] = useState<{ loading: boolean; success: boolean; error: string | null }>({
