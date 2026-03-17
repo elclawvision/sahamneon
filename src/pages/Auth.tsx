@@ -70,6 +70,12 @@ export default function Auth() {
 
                     if (signupResult.error) throw signupResult.error;
 
+                    // Immediately sign them in now that they exist in Neon Auth
+                    await authClient.signIn.email({
+                        email: email.trim(),
+                        password: pass,
+                    });
+
                     // After signup, ensure they are in saham_clients
                     await sql`
                         INSERT INTO saham_clients (user_email, status, created_at, last_login)
@@ -101,6 +107,12 @@ export default function Auth() {
                     });
 
                     if (signupResult.error) throw signupResult.error;
+
+                    // Immediately sign them in now that they exist in Neon Auth
+                    await authClient.signIn.email({
+                        email: email.trim(),
+                        password: pass,
+                    });
 
                     // Update their status and login time in saham_clients
                     await sql`
