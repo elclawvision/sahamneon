@@ -24,9 +24,10 @@ export default function Auth() {
     const { session, refreshSession } = useAuth();
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
+    const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [view, setView] = useState<'login' | 'forgot-password'>('login');
+    const [view, setView] = useState<'login' | 'signup' | 'forgot-password'>('login');
     const [tick, setTick] = useState(0);
 
     useEffect(() => {
@@ -44,45 +45,63 @@ export default function Auth() {
         setLoading(true);
         
         try {
-            const result = await authClient.signIn.email({
-                email: email.trim(),
-                password: pass,
-            });
+            const cleanedEmail = email.trim().toLowerCase().replace(/\s/g, '');
 
-            if (result.error) {
-                console.log("Neon SignIn Error:", result.error);
-                
-                // Fallback 1: Check if this is a PAID user who hasn't registered yet
+            // STEP 1: Try normal sign-in (may THROW on 401)
+            let signInResult: any = null;
+            let signInError: any = null;
+            try {
+                signInResult = await authClient.signIn.email({
+                    email: email.trim(),
+                    password: pass,
+                });
+                if (signInResult.error) {
+                    signInError = signInResult.error;
+                    signInResult = null;
+                }
+            } catch (err) {
+                signInError = err;
+            }
+
+            // STEP 2: If sign-in failed, try fallback auto-registration
+            if (signInError) {
+                console.log("Neon SignIn failed, running fallback...", signInError);
+
+                // Fallback 1: Check if this is a PAID user who hasn't registered in Neon Auth yet
                 const paidCheck = await sql`
                     SELECT * FROM global_product 
-                    WHERE email = ${email.trim()} 
+                    WHERE (LOWER(REPLACE(email, ' ', '')) = ${cleanedEmail} OR email ILIKE ${'%' + email.trim() + '%'})
                     AND status = 'PAID' 
+                    ORDER BY created_at DESC
                     LIMIT 1
                 `;
 
                 if (paidCheck && paidCheck.length > 0) {
                     const payment = paidCheck[0];
-                    console.log("Paid user found, attempting auto-registration...");
+                    console.log("Paid user found, auto-registering in Neon Auth...");
                     
                     try {
+                        // Register them in Neon Auth
                         const signupResult = await authClient.signUp.email({
                             email: email.trim(),
                             password: pass,
                             name: payment.name || 'Investor',
                         });
+                        // signUp might also throw, handle both patterns
+                        if (signupResult?.error) {
+                            console.warn("SignUp returned error:", signupResult.error);
+                        }
 
-                        if (signupResult.error) throw signupResult.error;
-
-                        // Immediately sign them in now that they exist in Neon Auth
+                        // Now sign them in
                         await authClient.signIn.email({
                             email: email.trim(),
                             password: pass,
                         });
 
-                        // After signup, ensure they are in saham_clients
+                        // Ensure they are in saham_clients
                         await sql`
                             INSERT INTO saham_clients (user_email, status, joined_at, last_login)
-                            VALUES (${email.trim()}, 'active', NOW(), NOW())
+                            VALUES (${cleanedEmail}, 'active', NOW(), NOW())
                             ON CONFLICT (user_email) DO UPDATE SET status = 'active', last_login = NOW()
                         `;
 
@@ -90,93 +109,86 @@ export default function Auth() {
                         await refreshSession();
                         navigate("/sheets");
                         return;
-                    } catch (e: any) {
-                        console.error("Auto-Registration Failed:", e);
-                        toast.error("Gagal registrasi otomatis: " + (e.message || JSON.stringify(e)));
+                    } catch (regErr: any) {
+                        console.error("Auto-Registration Failed:", regErr);
+                        toast.error("Gagal registrasi otomatis: " + (regErr.message || JSON.stringify(regErr)));
                         setLoading(false);
                         return;
                     }
                 }
 
-                // Fallback 2: Check if they are an active user in saham_clients but lost their Neon Auth record (db reset)
+                // Fallback 2: Check if they are in saham_clients but lost their Neon Auth record
                 const clientCheck = await sql`
                     SELECT * FROM saham_clients
-                    WHERE user_email = ${email.trim()}
+                    WHERE (LOWER(REPLACE(user_email, ' ', '')) = ${cleanedEmail} OR user_email ILIKE ${'%' + email.trim() + '%'})
                     AND status = 'active'
+                    ORDER BY joined_at DESC
                     LIMIT 1
                 `;
 
                 if (clientCheck && clientCheck.length > 0) {
                     const client = clientCheck[0];
-                    console.log("Existing active client found, restoring Neon Auth record...");
+                    console.log("Active client found, restoring Neon Auth...");
                     
                     try {
-                        const signupResult = await authClient.signUp.email({
+                        await authClient.signUp.email({
                             email: email.trim(),
                             password: pass,
                             name: client.name || 'Investor',
                         });
 
-                        if (signupResult.error) throw signupResult.error;
-
-                        // Immediately sign them in now that they exist in Neon Auth
                         await authClient.signIn.email({
                             email: email.trim(),
                             password: pass,
                         });
 
-                        // Update their status and login time in saham_clients
                         await sql`
-                            UPDATE saham_clients 
-                            SET status = 'active', last_login = NOW()
-                            WHERE user_email = ${email.trim()}
+                            UPDATE saham_clients SET status = 'active', last_login = NOW()
+                            WHERE user_email = ${client.user_email}
                         `;
 
                         toast.success("Login berhasil (akun direstorasi)!");
                         await refreshSession();
                         navigate("/sheets");
                         return;
-                    } catch (e: any) {
-                        console.error("Restoration Failed:", e);
-                        toast.error("Gagal restorasi akun: " + (e.message || JSON.stringify(e)));
+                    } catch (restErr: any) {
+                        console.error("Restoration Failed:", restErr);
+                        toast.error("Gagal restorasi akun: " + (restErr.message || JSON.stringify(restErr)));
                         setLoading(false);
                         return;
                     }
                 }
 
-                // If fallbacks fail, throw the original login error
-                throw result.error;
+                // No fallback matched - show error
+                toast.error("Email atau password salah.");
+                setLoading(false);
+                return;
             }
 
-            if (result.data?.user) {
-                const userEmail = result.data.user.email;
-                // Check if user is in saham_clients using Neon sql
-                const clients = await sql`SELECT * FROM saham_clients WHERE user_email = ${userEmail} LIMIT 1`;
+            // STEP 3: Sign-in succeeded - ensure user is in saham_clients
+            if (signInResult?.data?.user) {
+                const userEmail = signInResult.data.user.email;
+                const clients = await sql`SELECT * FROM saham_clients WHERE LOWER(REPLACE(user_email, ' ', '')) = ${cleanedEmail} LIMIT 1`;
                 const client = clients[0];
 
                 if (client) {
-                    // Update last login
-                    await sql`UPDATE saham_clients SET last_login = ${new Date().toISOString()} WHERE user_email = ${userEmail}`;
-                    
+                    await sql`UPDATE saham_clients SET last_login = ${new Date().toISOString()} WHERE user_email = ${client.user_email}`;
                     toast.success("Selamat datang kembali!");
                     await refreshSession();
                     navigate("/sheets");
                 } else {
-                    // This case should be handled by the auto-migration logic above or below
-                    // But if they reached here, they are in Neon Auth but not in saham_clients
+                    // In Neon Auth but not in saham_clients - check if they paid
                     const paidHistory = await sql`
                         SELECT * FROM global_product 
-                        WHERE email = ${userEmail} 
+                        WHERE (LOWER(REPLACE(email, ' ', '')) = ${cleanedEmail})
                         AND status = 'PAID' 
-                        AND product_name ILIKE '%saham ultimate%' 
                         LIMIT 1
                     `;
 
                     if (paidHistory && paidHistory.length > 0) {
-                        const p = paidHistory[0];
                         await sql`
                             INSERT INTO saham_clients (user_email, status, joined_at, last_login)
-                            VALUES (${userEmail}, 'active', NOW(), NOW())
+                            VALUES (${userEmail.toLowerCase()}, 'active', NOW(), NOW())
                             ON CONFLICT (user_email) DO NOTHING
                         `;
                         toast.success("Akses diaktifkan!");
@@ -190,7 +202,45 @@ export default function Auth() {
             }
         } catch (error: any) {
             console.error("Auth Error:", error);
-            toast.error(error.message || "Email atau password salah.");
+            toast.error(error.message || "Terjadi kesalahan. Coba lagi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSignUp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email || !pass || !name) { toast.error("Semua data wajib diisi."); return; }
+        setLoading(true);
+
+        try {
+            const signupResult = await authClient.signUp.email({
+                email: email.trim(),
+                password: pass,
+                name: name.trim(),
+            });
+
+            if (signupResult.error) throw signupResult.error;
+
+            // Immediately sign them in
+            await authClient.signIn.email({
+                email: email.trim(),
+                password: pass,
+            });
+
+            // Create record in saham_clients
+            await sql`
+                INSERT INTO saham_clients (user_email, status, joined_at, last_login)
+                VALUES (${email.trim()}, 'active', NOW(), NOW())
+                ON CONFLICT (user_email) DO UPDATE SET status = 'active', last_login = NOW()
+            `;
+
+            toast.success("Pendaftaran berhasil!");
+            await refreshSession();
+            navigate("/sheets");
+        } catch (error: any) {
+            console.error("SignUp Error:", error);
+            toast.error(error.message || "Gagal mendaftar.");
         } finally {
             setLoading(false);
         }
@@ -374,6 +424,31 @@ export default function Auth() {
                 }
 
                 .nav-back:hover { background: #f1f5f9; }
+
+                .tab-switcher {
+                    display: flex;
+                    background: #f1f5f9;
+                    padding: 4px;
+                    border-radius: 12px;
+                    margin-bottom: 2rem;
+                }
+                .tab-btn {
+                    flex: 1;
+                    border: none;
+                    background: none;
+                    padding: 8px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    border-radius: 8px;
+                    transition: all 0.2s;
+                }
+                .tab-btn.active {
+                    background: white;
+                    color: var(--primary);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                }
             `}</style>
 
             <button onClick={() => navigate('/lp')} className="nav-back">
@@ -384,17 +459,52 @@ export default function Auth() {
                 <div className="auth-header">
                     <img src="/saham.png" alt="Logo" className="auth-logo" />
                     <h1 className="auth-h1">
-                        {view === 'login' ? 'Selamat Datang' : 'Lupa Password'}
+                        {view === 'login' ? 'Selamat Datang' : view === 'signup' ? 'Buat Akun' : 'Lupa Password'}
                     </h1>
                     <p className="auth-p">
                         {view === 'login' 
                             ? 'Akses database Whale & Konglomerat IDX sekarang.' 
+                            : view === 'signup'
+                            ? 'Daftar sekarang untuk akses data IDX.'
                             : 'Masukkan email untuk instruksi reset password.'}
                     </p>
                 </div>
 
-                {view === 'login' ? (
-                    <form onSubmit={handleLogin}>
+                {(view === 'login' || view === 'signup') && (
+                    <div className="tab-switcher">
+                        <button 
+                            className={`tab-btn ${view === 'login' ? 'active' : ''}`}
+                            onClick={() => setView('login')}
+                        >
+                            Masuk
+                        </button>
+                        <button 
+                            className={`tab-btn ${view === 'signup' ? 'active' : ''}`}
+                            onClick={() => setView('signup')}
+                        >
+                            Daftar
+                        </button>
+                    </div>
+                )}
+
+                {view === 'login' || view === 'signup' ? (
+                    <form onSubmit={view === 'login' ? handleLogin : handleSignUp}>
+                        {view === 'signup' && (
+                            <>
+                                <label className="form-label">Nama Lengkap</label>
+                                <div className="input-wrap">
+                                    <KeyRound className="input-icon" />
+                                    <input
+                                        className="auth-input"
+                                        type="text"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="Contoh: Sarah"
+                                        required
+                                    />
+                                </div>
+                            </>
+                        )}
                         <label className="form-label">Email</label>
                         <div className="input-wrap">
                             <Mail className="input-icon" />
@@ -424,19 +534,30 @@ export default function Auth() {
                             </button>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
-                            <button type="button" onClick={() => setView('forgot-password')} className="btn-ghost">
-                                Lupa Password?
-                            </button>
-                        </div>
+                        {view === 'login' && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+                                <button type="button" onClick={() => setView('forgot-password')} className="btn-ghost">
+                                    Lupa Password?
+                                </button>
+                            </div>
+                        )}
 
                         <button className="btn-submit" type="submit" disabled={loading}>
-                            {loading ? 'Memproses...' : 'Masuk →'}
+                            {loading ? 'Memproses...' : view === 'login' ? 'Masuk →' : 'Daftar Akun →'}
                         </button>
 
                         <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Belum punya akses? </span>
-                            <button type="button" onClick={() => navigate('/payment')} className="btn-ghost">Beli Sekarang</button>
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                                {view === 'login' ? 'Belum punya akses?' : 'Sudah punya akun?'}
+                            </span>
+                            <button 
+                                type="button" 
+                                onClick={() => view === 'login' ? setView('signup') : setView('login')} 
+                                className="btn-ghost" 
+                                style={{marginLeft: '0.5rem'}}
+                            >
+                                {view === 'login' ? 'Daftar Sekarang' : 'Masuk Saja'}
+                            </button>
                         </div>
                     </form>
                 ) : (

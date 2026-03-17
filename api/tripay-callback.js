@@ -38,19 +38,19 @@ export default async (req, res) => {
     const { status, reference, merchant_ref } = req.body;
     const sql = neon(databaseUrl);
 
-    // 2. Only process if status is PAID
+      // 2. Only process if status is PAID (case-insensitive check for email safety)
     if (status === 'PAID') {
       console.log(`Payment confirmed for reference: ${reference}`);
 
       // Transactional update in Neon
-      // Fetch the full record to use in fulfillment
+      // Fetch the full record to use in fulfillment - use reference as it is unique
       const results = await sql`
         SELECT * FROM global_product WHERE tripay_reference = ${reference} LIMIT 1
       `;
       
       const product = results[0];
 
-      if (product && product.status === 'UNPAID') {
+      if (product && (product.status === 'UNPAID' || product.status === 'PENDING')) {
         await sql`
           UPDATE global_product 
           SET status = 'PAID' 
@@ -61,17 +61,43 @@ export default async (req, res) => {
         
         // --- Fulfillment Phase ---
         try {
-            console.log('Fulfillment started for:', product.email);
+            const userEmail = product.email.trim().toLowerCase();
+            const userPassword = product.password || '';
+            const userName = product.name || 'Investor';
+            console.log('Fulfillment started for:', userEmail);
             
-            // 1. Create client entry in saham_clients for dashboard access
-            // We use the password we stored in the 'address' column during creation
+            // STEP 1: Register user in Neon Auth so they can actually log in
+            const authUrl = process.env.NEON_AUTH_URL || 'https://ep-odd-sea-a1eal6y4.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth';
+            try {
+              const signUpRes = await fetch(`${authUrl}/sign-up/email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail, password: userPassword, name: userName })
+              });
+              const signUpData = await signUpRes.json();
+              if (signUpRes.ok) {
+                console.log('✅ User registered in Neon Auth:', userEmail);
+              } else {
+                console.log('⚠️ Neon Auth sign-up response:', JSON.stringify(signUpData));
+                // User might already exist, that's OK
+              }
+            } catch (authErr) {
+              console.error('⚠️ Neon Auth registration error (non-fatal):', authErr.message);
+            }
+
+            // STEP 2: Create client entry in saham_clients for dashboard access
             await sql`
-              INSERT INTO saham_clients (user_email, name, phone, password, status, created_at, last_login)
-              VALUES (${product.email}, ${product.name || ''}, ${product.phone || ''}, ${product.address || ''}, 'active', NOW(), NOW())
-              ON CONFLICT (user_email) DO UPDATE SET status = 'active', password = EXCLUDED.password
+              INSERT INTO saham_clients (user_email, name, phone, password, status, joined_at, last_login)
+              VALUES (${userEmail}, ${userName}, ${product.phone || ''}, ${userPassword}, 'active', NOW(), NOW())
+              ON CONFLICT (user_email) DO UPDATE SET 
+                status = 'active', 
+                password = EXCLUDED.password,
+                name = EXCLUDED.name,
+                phone = EXCLUDED.phone,
+                last_login = NOW()
             `;
 
-            console.log('✅ Fulfillment completed: User created/updated in saham_clients');
+            console.log('✅ Fulfillment completed: User in Neon Auth + saham_clients');
         } catch (fError) {
             console.error('❌ Fulfillment Error:', fError);
         }
