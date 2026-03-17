@@ -7,7 +7,7 @@ import LandingPage from './pages/LandingPage';
 import DemoDashboard from './pages/DemoDashboard';
 import Payment from './pages/Payment';
 import ReviewPage from './pages/ReviewPage';
-import { supabase } from './lib/supabase';
+import { authClient } from './lib/auth';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -15,16 +15,16 @@ function App() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
+        authClient.getSession().then((result) => {
+            if (result.data?.session) {
+                setSession(result.data.session);
+            }
             setLoading(false);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-
-        return () => subscription.unsubscribe();
+        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
+        // so we rely on periodic checks or manual updates if needed.
+        // For now, getSession at startup is the main flow.
     }, []);
 
     if (loading) return null;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
+import { sql } from '../lib/db';
 import { ArrowLeft, Copy, ShieldCheck, Zap, CreditCard, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,7 +26,7 @@ const SahamPayment = () => {
     const priceIDR = 99000;
     const productName = "Universal Saham Ultimate";
     const PIXEL_ID = "1941160619993263";
-    const CAPI_EDGE_FUNCTION_URL = 'https://nlrgdhpmsittuwiiindq.supabase.co/functions/v1/capi-universal';
+    const CAPI_EDGE_FUNCTION_URL = '/api/capi-universal';
 
     // Helper to get cookies for CAPI
     const getFbcFbpCookies = () => {
@@ -118,8 +119,19 @@ const SahamPayment = () => {
         };
 
         try {
-            const { data, error } = await supabase.functions.invoke('tripay-create-payment', { body: payload });
-            if (error) throw error;
+            // Using local Vercel Function
+            const response = await fetch('/api/tripay-create-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : {};
+            
+            if (!response.ok) throw new Error(data.message || data.error || 'Gagal membuat pembayaran');
 
             if (data?.success) {
                 // Track AddPaymentInfo via CAPI only
@@ -139,101 +151,87 @@ const SahamPayment = () => {
     };
 
     useEffect(() => {
-        console.log('🔴 [REALTIME INIT CHECK] showInstructions:', showInstructions, 'paymentData:', paymentData);
-        if (!showInstructions || !paymentData) {
-            console.log('🔴 [REALTIME] Aborting setup: showInstructions is false or paymentData is null');
-            return;
-        }
+        if (!showInstructions || !paymentData) return;
 
         const tripayRef = paymentData.tripay_reference || paymentData.reference;
-        if (!tripayRef) {
-            console.error('🔴 [REALTIME] ERROR: No tripay_reference or reference found in paymentData!', paymentData);
-            return;
-        }
+        if (!tripayRef) return;
         
-        console.log(`🚀 [REALTIME] 🟢 SUCCESS! Start listening for Saham activation on ref: [${tripayRef}]`);
-        const channelName = `payment-status-saham-${tripayRef}`;
+        console.log(`🚀 [POLLING] Start polling for status on ref: [${tripayRef}]`);
         
-        const channel = supabase.channel(channelName)
-            .on('postgres_changes', { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'global_product', 
-                filter: `tripay_reference=eq.${tripayRef}` 
-            },
-                (payload: any) => {
-                    console.log('🔥 [REALTIME RAW PAYLOAD RECEIVED] ->', JSON.stringify(payload, null, 2));
-                    console.log(`🔥 [REALTIME STATUS CHECK] Old: ${payload.old?.status} | New: ${payload.new?.status}`);
+        let isPaid = false;
+        const pollInterval = setInterval(async () => {
+            if (isPaid) return;
+            
+            try {
+                const results = await sql`SELECT status FROM global_product WHERE tripay_reference = ${tripayRef} LIMIT 1`;
+                const record = results[0];
+                
+                if (record?.status === 'PAID') {
+                    isPaid = true;
+                    clearInterval(pollInterval);
+                    console.log('✅ [SUCCESS] Activation detected via polling!');
+                    toast.success("✅ PEMBAYARAN BERHASIL! Akses Anda sudah aktif.", { duration: 10000 });
                     
-                    if (payload.new?.status === 'PAID') {
-                        console.log('✅ [SUCCESS] Activation detected via realtime! Firing TOAST...');
-                        toast.success("✅ PEMBAYARAN BERHASIL! Akses Anda sudah aktif.", { duration: 10000 });
-                        supabase.removeChannel(channel);
-                        
-                        // Show full-screen success modal with premium design
-                        const modal = document.createElement('div');
-                        modal.innerHTML = `
-                          <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999999; backdrop-filter: blur(8px);">
-                            <div style="background: linear-gradient(135deg, #0A0612 0%, #13141c 50%, #0A0612 100%); padding: 50px; border-radius: 25px; text-align: center; max-width: 90%; box-shadow: 0 25px 80px rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.3); position: relative; overflow: hidden;">
-                              <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"></div>
-                              <div style="position: relative; z-index: 10;">
-                                <div style="font-size: 5rem; margin-bottom: 25px; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));">🎉</div>
-                                <h2 style="font-size: 2.5rem; background: linear-gradient(45deg, #3b82f6, #60a5fa, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; font-weight: bold; font-family: 'Cormorant Garamond', serif;">Pembayaran Berhasil!</h2>
-                                <p style="font-size: 1.4rem; color: #e2e8f0; margin-bottom: 25px; line-height: 1.6;">Akses Saham Ultimate Anda telah aktif.</p>
-                                <button id="sahamLoginBtn" style="background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; border: none; padding: 15px 30px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: all 0.3s ease;">
-                                  Masuk Dashboard
-                                </button>
-                                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 15px; margin-top: 20px;">
-                                  <p style="color: #94a3b8; font-size: 1rem;">Otomatis dialihkan dalam <span id="sahamCountdown" style="color: #60a5fa; font-weight: bold; font-size: 1.2rem;">5</span> detik</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <style>
-                            @keyframes pulse {
-                              0%, 100% { opacity: 0.5; transform: scale(1); }
-                              50% { opacity: 0.8; transform: scale(1.05); }
-                            }
-                          </style>
-                        `;
-                        document.body.appendChild(modal);
-
-                        // Add login button click handler
-                        const loginBtn = document.getElementById('sahamLoginBtn');
-                        if (loginBtn) {
-                          loginBtn.addEventListener('click', () => {
-                            document.body.removeChild(modal);
-                            navigate('/auth');
-                          });
-                        }
-
-                        // Add countdown
-                        let timeLeft = 5;
-                        const countdownEl = document.getElementById('sahamCountdown');
-                        const timer = setInterval(() => {
-                          timeLeft -= 1;
-                          if (countdownEl) countdownEl.innerText = timeLeft.toString();
-                          if (timeLeft <= 0) {
-                            clearInterval(timer);
-                            if (document.body.contains(modal)) {
-                              document.body.removeChild(modal);
-                              navigate('/auth');
-                            }
-                          }
-                        }, 1000);
-                    } else {
-                        console.log('⚠️ [REALTIME] Status was updated, but it is NOT "PAID". It is:', payload.new?.status);
-                    }
+                    // Show success modal
+                    showSuccessModal();
                 }
-            ).subscribe((status, err) => {
-                console.log(`📡 [REALTIME SUBSCRIPTION STATUS] channel [${channelName}] is now:`, status);
-                if (err) console.error('❌ [REALTIME SUBSCRIPTION ERROR]:', err);
-            });
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }, 5000); // Poll every 5 seconds
 
-        return () => {
-            console.log(`🛑 [REALTIME] Cleanup: Removing channel [${channelName}]`);
-            supabase.removeChannel(channel);
+        const showSuccessModal = () => {
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+              <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999999; backdrop-filter: blur(8px);">
+                <div style="background: linear-gradient(135deg, #0A0612 0%, #13141c 50%, #0A0612 100%); padding: 50px; border-radius: 25px; text-align: center; max-width: 90%; box-shadow: 0 25px 80px rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.3); position: relative; overflow: hidden;">
+                  <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"></div>
+                  <div style="position: relative; z-index: 10;">
+                    <div style="font-size: 5rem; margin-bottom: 25px; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));">🎉</div>
+                    <h2 style="font-size: 2.5rem; background: linear-gradient(45deg, #3b82f6, #60a5fa, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; font-weight: bold; font-family: 'Cormorant Garamond', serif;">Pembayaran Berhasil!</h2>
+                    <p style="font-size: 1.4rem; color: #e2e8f0; margin-bottom: 25px; line-height: 1.6;">Akses Saham Ultimate Anda telah aktif.</p>
+                    <button id="sahamLoginBtn" style="background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; border: none; padding: 15px 30px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: all 0.3s ease;">
+                      Masuk Dashboard
+                    </button>
+                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 15px; margin-top: 20px;">
+                      <p style="color: #94a3b8; font-size: 1rem;">Otomatis dialihkan dalam <span id="sahamCountdown" style="color: #60a5fa; font-weight: bold; font-size: 1.2rem;">5</span> detik</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <style>
+                @keyframes pulse {
+                  0%, 100% { opacity: 0.5; transform: scale(1); }
+                  50% { opacity: 0.8; transform: scale(1.05); }
+                }
+              </style>
+            `;
+            document.body.appendChild(modal);
+
+            const loginBtn = document.getElementById('sahamLoginBtn');
+            if (loginBtn) {
+              loginBtn.addEventListener('click', () => {
+                document.body.removeChild(modal);
+                navigate('/auth');
+              });
+            }
+
+            let timeLeft = 5;
+            const countdownEl = document.getElementById('sahamCountdown');
+            const timer = setInterval(() => {
+              timeLeft -= 1;
+              if (countdownEl) countdownEl.innerText = timeLeft.toString();
+              if (timeLeft <= 0) {
+                clearInterval(timer);
+                if (document.body.contains(modal)) {
+                  document.body.removeChild(modal);
+                  navigate('/auth');
+                }
+              }
+            }, 1000);
         };
+
+        return () => clearInterval(pollInterval);
     }, [showInstructions, paymentData, navigate]);
 
     return (

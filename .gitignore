@@ -5,3 +5,5 @@ dist
 .temp
 saham_scraper/.env
 downloads
+.vercel
+.env*.local

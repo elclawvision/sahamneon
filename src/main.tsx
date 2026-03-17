@@ -3,17 +3,20 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 
-const APP_VERSION = '2026.03.13.21'; // <-- Change this to force cache clear
+const APP_VERSION = '2026.03.18.04'; // <-- Match today's date
 
-if (typeof window !== 'undefined' && localStorage.getItem('v_cache') !== APP_VERSION) {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+if (typeof window !== 'undefined') {
+    const currentCache = localStorage.getItem('v_cache');
+    if (currentCache && currentCache !== APP_VERSION) {
+        localStorage.clear(); // Clear everything once
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+        }
+        localStorage.setItem('v_cache', APP_VERSION);
+        window.location.reload();
+    } else {
+        localStorage.setItem('v_cache', APP_VERSION);
     }
-    if ('caches' in window) {
-        caches.keys().then(names => names.forEach(n => caches.delete(n)));
-    }
-    localStorage.setItem('v_cache', APP_VERSION);
-    window.location.reload();
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, ShieldCheck, Zap, TrendingUp, BarChart3, Users, Clock, ArrowRight, CheckCircle2, Menu, X, Rocket, GraduationCap, ChevronRight, MessageSquare, Shield, Lock, Layout, PlayCircle, Eye, EyeOff, Copy } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
+import { sql } from '../lib/db';
 import DemoDashboard from './DemoDashboard';
 
 // ── TYPES & MOCK DATA ────────────────────────────────────────────────────────────────────
@@ -171,29 +172,49 @@ export default function LandingPage() {
         const clientIp = await getClientIp().catch(() => null);
 
         try {
-            await supabase.functions.invoke('capi-universal', {
-                body: {
+            await fetch('/api/capi-universal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     pixelId: PIXEL_ID, eventName: 'AddPaymentInfo', eventSourceUrl: window.location.href,
                     customData: { content_name: productName, value: priceIDR, currency: 'IDR' },
                     userData: { fbc, fbp, client_ip_address: clientIp, fn: await sha256(payName), ph: await sha256(cleanPhone), em: await sha256(payEmail) }
-                }
+                })
             });
         } catch (e) { console.error('CAPI AddPaymentInfo error', e); }
 
         try {
-            const { data, error } = await supabase.functions.invoke('tripay-create-payment', {
-                body: {
+            const response = await fetch('/api/tripay-create-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     subscriptionType: 'universal', paymentMethod: payMethod,
                     userName: payName, userEmail: payEmail.trim().toLowerCase(), phoneNumber: cleanPhone,
                     address: 'Digital', amount: priceIDR, currency: 'IDR', quantity: 1,
-                    productName, fbc, fbp, clientIp, purchasePassword: payPassword.trim().toLowerCase()
-                }
+                    productName, fbc, fbp, clientIp, purchasePassword: payPassword.trim()
+                })
             });
-            if (error) throw error;
+
+            const text = await response.text();
+            let data: any = {};
+            try { data = JSON.parse(text); } catch (e) { console.error('Parse error', text); }
+            
+            if (!response.ok) {
+                const errMsg = data.message || data.error || 'Gagal membuat pembayaran';
+                console.error('Payment Error Details:', data);
+                throw new Error(errMsg);
+            }
+
             if (data?.success) {
                 setPayData(data);
                 setPayInstructions(true);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Scroll to the checkout form section instead of top of page
+                const checkoutEl = document.getElementById('checkout-form');
+                if (checkoutEl) {
+                    checkoutEl.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             } else {
                 alert(data?.error || 'Gagal membuat pembayaran. Hubungi admin.');
             }
@@ -206,36 +227,35 @@ export default function LandingPage() {
         if (!payInstructions || !payData) return;
         const tripayRef = payData.tripay_reference || payData.reference;
         if (!tripayRef) return;
-        const channelName = `payment-status-saham-${tripayRef}`;
-        const channel = supabase.channel(channelName)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'global_product', filter: `tripay_reference=eq.${tripayRef}` },
-                (payload: any) => {
-                    if (payload.new?.status === 'PAID') {
-                        supabase.removeChannel(channel);
-                        const modal = document.createElement('div');
-                        modal.innerHTML = `<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(8px)"><div style="background:linear-gradient(135deg,#0A0612,#13141c);padding:50px;border-radius:25px;text-align:center;max-width:90%;box-shadow:0 25px 80px rgba(59,130,246,0.3);border:2px solid rgba(59,130,246,0.3)"><div style="font-size:5rem;margin-bottom:25px">🎉</div><h2 style="font-size:2.5rem;background:linear-gradient(45deg,#3b82f6,#60a5fa,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;font-weight:bold">Pembayaran Berhasil!</h2><p style="font-size:1.4rem;color:#e2e8f0;margin-bottom:25px">Akses Saham Ultimate Anda telah aktif.</p><button id="sahamLoginBtn" style="background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border:none;padding:15px 30px;border-radius:12px;font-size:1.2rem;font-weight:bold;cursor:pointer;margin-bottom:20px">Masuk Dashboard</button><p style="color:#94a3b8;font-size:1rem">Otomatis dialihkan dalam <span id="sahamCountdown" style="color:#60a5fa;font-weight:bold">5</span> detik</p></div></div>`;
-                        document.body.appendChild(modal);
-                        const btn = document.getElementById('sahamLoginBtn');
-                        if (btn) btn.onclick = () => { document.body.removeChild(modal); navigate('/auth'); };
-                        let t = 5;
-                        const int = setInterval(() => { t--; const el = document.getElementById('sahamCountdown'); if (el) el.innerText = String(t); if (t <= 0) { clearInterval(int); if (document.body.contains(modal)) { document.body.removeChild(modal); navigate('/auth'); } } }, 1000);
-                    }
+        
+        let isPaid = false;
+        const pollInterval = setInterval(async () => {
+            if (isPaid) return;
+            try {
+                const results = await sql`SELECT status FROM global_product WHERE tripay_reference = ${tripayRef} LIMIT 1`;
+                if (results[0]?.status === 'PAID') {
+                    isPaid = true;
+                    clearInterval(pollInterval);
+                    const modal = document.createElement('div');
+                    modal.innerHTML = `<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(8px)"><div style="background:linear-gradient(135deg,#0A0612,#13141c);padding:50px;border-radius:25px;text-align:center;max-width:90%;box-shadow:0 25px 80px rgba(59,130,246,0.3);border:2px solid rgba(59,130,246,0.3)"><div style="font-size:5rem;margin-bottom:25px">🎉</div><h2 style="font-size:2.5rem;background:linear-gradient(45deg,#3b82f6,#60a5fa,#93c5fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;font-weight:bold">Pembayaran Berhasil!</h2><p style="font-size:1.4rem;color:#e2e8f0;margin-bottom:25px">Akses Saham Ultimate Anda telah aktif.</p><button id="sahamLoginBtn" style="background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border:none;padding:15px 30px;border-radius:12px;font-size:1.2rem;font-weight:bold;cursor:pointer;margin-bottom:20px">Masuk Dashboard</button><p style="color:#94a3b8;font-size:1rem">Otomatis dialihkan dalam <span id="sahamCountdown" style="color:#60a5fa;font-weight:bold">5</span> detik</p></div></div>`;
+                    document.body.appendChild(modal);
+                    const btn = document.getElementById('sahamLoginBtn');
+                    if (btn) btn.onclick = () => { document.body.removeChild(modal); navigate('/auth'); };
+                    let t = 5;
+                    const int = setInterval(() => { t--; const el = document.getElementById('sahamCountdown'); if (el) el.innerText = String(t); if (t <= 0) { clearInterval(int); if (document.body.contains(modal)) { document.body.removeChild(modal); navigate('/auth'); } } }, 1000);
                 }
-            ).subscribe();
-        return () => { supabase.removeChannel(channel); };
+            } catch (err) {
+                console.error('Polling error:', err);
+            }
+        }, 5000);
+
+        return () => clearInterval(pollInterval);
     }, [payInstructions, payData, navigate]);
 
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('saham_reviews')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                if (error) {
-                    console.log('💡 Note: Saham reviews table might be initializing.');
-                    return;
-                }
+                const data = await sql`SELECT * FROM saham_reviews ORDER BY created_at DESC`;
                 if (data) setDbReviews(data);
             } catch (e) {
                 // Silently fail to avoid console noise for missing table
@@ -303,11 +323,15 @@ export default function LandingPage() {
                 id: 'saham'
             };
 
-            const { data, error } = await supabase.functions.invoke('send-ebooks-free', {
-                body: payload
+            const response = await fetch('/api/send-ebooks-free', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
-            if (error) throw error;
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : {};
+            if (!response.ok) throw new Error(data.message || data.error || 'Gagal mengirim ebook free');
 
             if (data?.success) {
                 setFreeEbookStatus({ loading: false, success: true, error: null });
@@ -316,8 +340,10 @@ export default function LandingPage() {
                 try {
                     const { fbc, fbp } = getFbcFbpCookies();
                     const clientIp = await getClientIp();
-                    await supabase.functions.invoke('capi-universal', {
-                        body: {
+                    await fetch('/api/capi-universal', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
                             pixelId: PIXEL_ID,
                             eventName: 'FreeEbook',
                             eventSourceUrl: window.location.href,
@@ -326,14 +352,14 @@ export default function LandingPage() {
                                 value: 0,
                                 currency: 'IDR'
                             },
-                            userData: {
-                                fbc, fbp,
-                                client_ip_address: clientIp,
-                                fn: await sha256(formData.name),
-                                ph: await sha256(formattedWa),
-                                em: await sha256(formData.email)
-                            }
-                        }
+                                userData: {
+                                    fbc, fbp,
+                                    client_ip_address: clientIp,
+                                    fn: await sha256(formData.name),
+                                    ph: await sha256(formattedWa),
+                                    em: await sha256(formData.email)
+                                }
+                        })
                     });
                     console.log('✅ CAPI FreeEbook event sent');
                 } catch (capiErr) {

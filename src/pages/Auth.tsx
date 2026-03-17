@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
+import { sql } from '../lib/db';
 import { toast } from 'sonner';
 import { Mail, Lock, Eye, EyeOff, Zap, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
 
@@ -32,8 +33,8 @@ export default function Auth() {
     }, []);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) navigate('/sheets');
+        authClient.getSession().then((result) => {
+            if (result.data?.session) navigate('/sheets');
         });
     }, [navigate]);
 
@@ -43,67 +44,120 @@ export default function Auth() {
         setLoading(true);
         
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email.trim().toLowerCase(),
+            const result = await authClient.signIn.email({
+                email: email.trim(),
                 password: pass,
             });
-            if (error) throw error;
 
-            if (data.user) {
-                // Check if user is in saham_clients
-                const { data: client, error: clientErr } = await supabase
-                    .from('saham_clients')
-                    .select('*')
-                    .eq('user_email', data.user.email)
-                    .maybeSingle();
+            if (result.error) {
+                // If login fails, check if this is a PAID user who hasn't registered yet
+                const paidCheck = await sql`
+                    SELECT * FROM global_product 
+                    WHERE email = ${email.trim()} 
+                    AND status = 'PAID' 
+                    LIMIT 1
+                `;
 
-                if (clientErr) {
-                    console.error("Client check error:", clientErr);
+                if (paidCheck && paidCheck.length > 0) {
+                    const payment = paidCheck[0];
+                    console.log("Paid user found, attempting auto-registration...");
+                    
+                    const signupResult = await authClient.signUp.email({
+                        email: email.trim(),
+                        password: pass,
+                        name: payment.name || 'User',
+                    });
+
+                    if (signupResult.error) throw signupResult.error;
+
+                    // After signup, ensure they are in saham_clients
+                    await sql`
+                        INSERT INTO saham_clients (user_email, name, phone, password, status, created_at, last_login)
+                        VALUES (${email.trim()}, ${payment.name || ''}, ${payment.phone || ''}, ${pass}, 'active', NOW(), NOW())
+                        ON CONFLICT (user_email) DO UPDATE SET status = 'active', password = EXCLUDED.password
+                    `;
+
+                    toast.success("Akun diaktifkan secara otomatis!");
+                    navigate("/sheets");
+                    return;
                 }
+
+                // Fallback 2: Check if they are an active user in saham_clients but lost their Neon Auth record (db reset)
+                const clientCheck = await sql`
+                    SELECT * FROM saham_clients
+                    WHERE user_email = ${email.trim()}
+                    AND status = 'active'
+                    LIMIT 1
+                `;
+
+                if (clientCheck && clientCheck.length > 0) {
+                    const client = clientCheck[0];
+                    console.log("Existing active client found, restoring Neon Auth record...");
+                    
+                    const signupResult = await authClient.signUp.email({
+                        email: email.trim(),
+                        password: pass,
+                        name: client.name || 'User',
+                    });
+
+                    if (signupResult.error) throw signupResult.error;
+
+                    // Update their password in saham_clients to the new one
+                    await sql`
+                        UPDATE saham_clients 
+                        SET password = ${pass}, last_login = NOW()
+                        WHERE user_email = ${email.trim()}
+                    `;
+
+                    toast.success("Login berhasil (akun direstorasi)!");
+                    navigate("/sheets");
+                    return;
+                }
+
+                throw result.error;
+            }
+
+            if (result.data?.user) {
+                const userEmail = result.data.user.email;
+                // Check if user is in saham_clients using Neon sql
+                const clients = await sql`SELECT * FROM saham_clients WHERE user_email = ${userEmail} LIMIT 1`;
+                const client = clients[0];
 
                 if (client) {
                     // Update last login
-                    await supabase
-                        .from('saham_clients')
-                        .update({ last_login: new Array().slice.call(new Date().toISOString())[0] ? new Date().toISOString() : new Date().toISOString() })
-                        .eq('user_email', data.user.email);
+                    await sql`UPDATE saham_clients SET last_login = ${new Date().toISOString()} WHERE user_email = ${userEmail}`;
                     
                     toast.success("Selamat datang kembali!");
                     navigate("/sheets");
                 } else {
-                    // AUTO MIGRATION LOGIC: Check if user has PAID for universal_saham_ultimate
-                    const { data: orders, error: orderErr } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .eq('user_email', data.user.email)
-                        .eq('status', 'PAID')
-                        .ilike('product_name', '%saham ultimate%')
-                        .limit(1);
+                    // This case should be handled by the auto-migration logic above or below
+                    // But if they reached here, they are in Neon Auth but not in saham_clients
+                    const paidHistory = await sql`
+                        SELECT * FROM global_product 
+                        WHERE email = ${userEmail} 
+                        AND status = 'PAID' 
+                        AND product_name ILIKE '%saham ultimate%' 
+                        LIMIT 1
+                    `;
 
-                    if (orders && orders.length > 0) {
-                        // PAID -> Auto Migrate
-                        const { error: insertErr } = await supabase
-                            .from('saham_clients')
-                            .insert([
-                                { user_email: data.user.email, status: 'active', last_login: new Date().toISOString() }
-                            ]);
-                        
-                        if (insertErr) {
-                            toast.error("Gagal sinkronisasi data client. Hubungi admin.");
-                            await supabase.auth.signOut();
-                        } else {
-                            toast.success("Akses Saham Ultimate diaktifkan secara otomatis!");
-                            navigate("/sheets");
-                        }
+                    if (paidHistory && paidHistory.length > 0) {
+                        const p = paidHistory[0];
+                        await sql`
+                            INSERT INTO saham_clients (user_email, name, phone, password, status, created_at, last_login)
+                            VALUES (${userEmail}, ${p.name || ''}, ${p.phone || ''}, ${p.address || ''}, 'active', NOW(), NOW())
+                            ON CONFLICT (user_email) DO NOTHING
+                        `;
+                        toast.success("Akses diaktifkan!");
+                        navigate("/sheets");
                     } else {
-                        // NOT PAID -> Reject
-                        toast.error("Anda belum membeli. Silahkan beli terlebih dahulu.");
-                        await supabase.auth.signOut();
+                        toast.error("Anda belum memiliki akses Saham Ultimate.");
+                        await authClient.signOut();
                     }
                 }
             }
         } catch (error: any) {
-            toast.error(error.message);
+            console.error("Auth Error:", error);
+            toast.error(error.message || "Email atau password salah.");
         } finally {
             setLoading(false);
         }
@@ -111,23 +165,7 @@ export default function Auth() {
 
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) { toast.error("Masukkan email untuk reset password."); return; }
-        setLoading(true);
-        try {
-            const { error } = await supabase.functions.invoke('send-reset-password-email', {
-                body: {
-                    email: email.trim().toLowerCase(),
-                    redirectTo: `${window.location.origin}/reset-password`
-                }
-            });
-            if (error) throw error;
-            toast.success("Email reset password telah dikirim. Silahkan cek inbox/spam anda.");
-            setView('login');
-        } catch (error: any) {
-            toast.error(error.message || "Gagal mengirim email reset.");
-        } finally {
-            setLoading(false);
-        }
+        toast.info("Fitur reset password sedang dalam pemeliharaan (migrasi ke Neon). Silahkan hubungi admin.");
     };
 
     const dots = Array.from({ length: 32 }, (_, i) => ({

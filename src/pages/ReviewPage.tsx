@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
+import { sql } from '../lib/db';
 import { toast } from 'sonner';
 import { Mail, Lock, Eye, EyeOff, Star, Trash2, ArrowLeft } from "lucide-react";
 
@@ -20,54 +21,49 @@ export default function ReviewPage() {
     const [isActionLoading, setIsActionLoading] = useState(false);
 
     const fetchUserReview = async (email: string) => {
-        const { data } = await supabase.from('saham_reviews').select('*').eq('user_email', email).maybeSingle();
-        if (data) {
-            setUserReview(data);
-            setReviewText(data.comment);
-            setReviewRating(data.rating);
-        } else {
-            setUserReview(null);
-            setReviewText("");
-            setReviewRating(0);
+        try {
+            const results = await sql`SELECT * FROM saham_reviews WHERE user_email = ${email} LIMIT 1`;
+            const data = results[0];
+            if (data) {
+                setUserReview(data);
+                setReviewText(data.comment);
+                setReviewRating(data.rating);
+            } else {
+                setUserReview(null);
+                setReviewText("");
+                setReviewRating(0);
+            }
+        } catch (error) {
+            console.error("Fetch review error:", error);
         }
     };
 
     useEffect(() => {
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
+            const result = await authClient.getSession();
+            if (result.data?.session?.user) {
                 setIsLoggedIn(true);
-                setUserEmailSession(session.user.email || "");
-                fetchUserReview(session.user.email || "");
+                const email = result.data.session.user.email || "";
+                setUserEmailSession(email);
+                fetchUserReview(email);
             }
         };
         checkSession();
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                setIsLoggedIn(true);
-                setUserEmailSession(session.user.email || "");
-                fetchUserReview(session.user.email || "");
-            } else {
-                setIsLoggedIn(false);
-                setUserEmailSession("");
-                setUserReview(null);
-            }
-        });
-
-        return () => { authListener.subscription.unsubscribe(); };
+        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
+        // so we rely on manual updates or periodic checks.
     }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoginLoading(true);
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const result = await authClient.signIn.email({
                 email: loginEmail.trim().toLowerCase(),
                 password: loginPassword,
             });
-            if (error) throw error;
-            if (data.user) {
+            if (result.error) throw result.error;
+            if (result.data?.user) {
                 toast.success("Login Berhasil");
             }
         } catch (error: any) {
@@ -88,25 +84,28 @@ export default function ReviewPage() {
         }
         setIsActionLoading(true);
         try {
-            const payload = {
-                user_email: userEmailSession,
-                name: userEmailSession.split('@')[0],
-                rating: reviewRating,
-                comment: reviewText.trim()
-            };
+            const comment = reviewText.trim();
+            const name = userEmailSession.split('@')[0];
+            
             if (userReview) {
-                const { error } = await supabase.from('saham_reviews').update(payload).eq('id', userReview.id);
-                if (error) throw error;
+                await sql`
+                    UPDATE saham_reviews 
+                    SET rating = ${reviewRating}, comment = ${comment}, name = ${name}
+                    WHERE id = ${userReview.id}
+                `;
                 toast.success("Review diperbarui");
             } else {
-                const { error } = await supabase.from('saham_reviews').insert([payload]);
-                if (error) throw error;
+                await sql`
+                    INSERT INTO saham_reviews (user_email, name, rating, comment)
+                    VALUES (${userEmailSession}, ${name}, ${reviewRating}, ${comment})
+                `;
                 toast.success("Review ditambahkan");
             }
             fetchUserReview(userEmailSession);
         } catch (error: any) {
             toast.error(error.message || "Gagal submit review");
         } finally {
+            setIsActionLoading(true);
             setIsActionLoading(false);
         }
     };
@@ -116,8 +115,7 @@ export default function ReviewPage() {
         if (!confirm("Hapus review anda?")) return;
         setIsActionLoading(true);
         try {
-            const { error } = await supabase.from('saham_reviews').delete().eq('id', userReview.id);
-            if (error) throw error;
+            await sql`DELETE FROM saham_reviews WHERE id = ${userReview.id}`;
             toast.success("Review dihapus");
             fetchUserReview(userEmailSession);
         } catch (error: any) {
@@ -327,7 +325,10 @@ export default function ReviewPage() {
                                     Halo, <strong>{userEmailSession.split('@')[0]}</strong>
                                 </span>
                                 <button
-                                    onClick={() => supabase.auth.signOut()}
+                                    onClick={async () => {
+                                        await authClient.signOut();
+                                        setIsLoggedIn(false);
+                                    }}
                                     style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '0.25rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
                                 >
                                     Logout

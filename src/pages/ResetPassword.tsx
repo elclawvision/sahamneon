@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
 import { toast } from 'sonner';
 import { Lock, Eye, EyeOff, CheckCircle, Zap, ShieldCheck } from 'lucide-react';
 
@@ -38,11 +38,11 @@ const ResetPassword = () => {
         setLoading(true);
 
         try {
-            const { error } = await supabase.auth.updateUser({
+            const result = await authClient.updateUser({
                 password: cleanPass
             });
 
-            if (error) throw error;
+            if (result.error) throw result.error;
 
             setIsSuccess(true);
             toast.success("Password berhasil diperbarui!");

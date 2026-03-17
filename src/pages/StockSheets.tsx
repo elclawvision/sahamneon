@@ -7,7 +7,7 @@ import { publicFigures } from '../data/publicFigures';
 import { hotSearches } from '../data/hotSearches';
 import { StockRow, InvestorRow } from '../types/stock';
 import { useTheme } from '../context/ThemeContext';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth';
 
 import { getFreeFloatColumns, getStockColumns, getInvestorColumns } from './StockSheetColumns';
 import { getLocalTickerData, getLocalInvestorData } from '../data/tickerUtils';
@@ -51,19 +51,17 @@ const StockSheets: React.FC = () => {
 
     // Auth Logic
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUserEmail(session?.user?.email || null);
+        authClient.getSession().then((result) => {
+            setUserEmail(result.data?.session?.user?.email || null);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUserEmail(session?.user?.email || null);
-        });
-
-        return () => subscription.unsubscribe();
+        // Neon authClient doesn't have an equivalent onAuthStateChange yet in the same way,
+        // so we rely on manual updates or periodic checks.
     }, []);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await authClient.signOut();
+        setUserEmail(null);
         setShowProfileMenu(false);
     };
 
