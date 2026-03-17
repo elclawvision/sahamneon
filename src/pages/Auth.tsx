@@ -81,7 +81,7 @@ export default function Auth() {
 
                         // After signup, ensure they are in saham_clients
                         await sql`
-                            INSERT INTO saham_clients (user_email, status, created_at, last_login)
+                            INSERT INTO saham_clients (user_email, status, joined_at, last_login)
                             VALUES (${email.trim()}, 'active', NOW(), NOW())
                             ON CONFLICT (user_email) DO UPDATE SET status = 'active', last_login = NOW()
                         `;
@@ -172,7 +172,7 @@ export default function Auth() {
                     if (paidHistory && paidHistory.length > 0) {
                         const p = paidHistory[0];
                         await sql`
-                            INSERT INTO saham_clients (user_email, status, created_at, last_login)
+                            INSERT INTO saham_clients (user_email, status, joined_at, last_login)
                             VALUES (${userEmail}, 'active', NOW(), NOW())
                             ON CONFLICT (user_email) DO NOTHING
                         `;

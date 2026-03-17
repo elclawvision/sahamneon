@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 
-const APP_VERSION = '2026.03.18.09'; // <-- Match today's date
+const APP_VERSION = '2026.03.18.10'; // <-- Match today's date
 
 if (typeof window !== 'undefined') {
     const currentCache = localStorage.getItem('v_cache');
