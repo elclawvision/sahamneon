@@ -20,7 +20,7 @@ async function testSignup() {
     try {
         console.log("Attempting to sign up test user...");
         const result = await authClient.signUp.email({
-            email: 'test_neon_auth@example.com',
+            email: 'elvisiondragon@gmail.com',
             password: 'TestPassword123!',
             name: 'Test User'
         }, {
